@@ -125,4 +125,87 @@ func main() {
 
 	fmt.Printf(mrDetails.Name)
 
+	// list all providers
+	providers, err := tools.ListProviders(context.Background(), dynamicClient)
+	if err != nil {
+		fmt.Printf("error listing providers: %v\n", err)
+		os.Exit(1)
+	}
+
+	for _, p := range providers {
+		fmt.Printf("Name: %s | Version: %s | State: %s | Installed: %t\n", p.Name, p.Version, p.State, p.Installed)
+	}
+
+	// check provider health
+	providerHealth, err := tools.CheckAllProviderHealth(context.Background(), dynamicClient)
+	if err != nil {
+		fmt.Printf("error checking provider health: %v\n", err)
+		os.Exit(1)
+	}
+
+	for _, ph := range providerHealth {
+		fmt.Printf("Provider: %s | Healthy: %t\n", ph.ProviderName, ph.Health)
+	}
+
+	// Get events for a specific XR
+	events, err := tools.GetEvents(context.Background(), clientset, "my-bucket", "default")
+	if err != nil {
+		fmt.Printf("error getting events: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("\n=== Events for example-xr ===\n")
+	for _, e := range events {
+		fmt.Printf("LastSeen: %s | Type: %s | Reason: %s | Object: %s | Message: %s | Count: %d\n",
+			e.LastSeen, e.Type, e.Reason, e.Object, e.Message, e.Count)
+	}
+
+	fmt.Println("==========================")
+
+	// get condition for specific MR
+	conditions, err := tools.GetConditions(context.Background(), dynamicClient, "s3.aws.upbound.io", "v1beta1", "buckets", "test-crossplane-connection-11222222", "")
+	if err != nil {
+		fmt.Printf("error getting conditions: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("\n=== Conditions for example-xr ===\n")
+	for _, c := range conditions {
+		fmt.Printf("Type: %s | Status: %s | Reason: %s | Message: %s | LastTransitionTime: %s | ObservedGeneration: %d\n",
+			c.Type, c.Status, c.Reason, c.Message, c.LastTransitionTime, c.ObservedGeneration)
+	}
+
+	// get condition for specific
+	xrconditions, err := tools.GetConditions(context.Background(), dynamicClient, "platform.example.com", "v1alpha1", "xbuckets", "my-bucket", "default")
+	if err != nil {
+		fmt.Printf("error getting conditions: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("\n=== Conditions for example-xr ===\n")
+	for _, c := range xrconditions {
+		fmt.Printf("Type: %s | Status: %s | Reason: %s | Message: %s | LastTransitionTime: %s | ObservedGeneration: %d\n",
+			c.Type, c.Status, c.Reason, c.Message, c.LastTransitionTime, c.ObservedGeneration)
+	}
+
+	// get xrtree
+	fmt.Println("Get xr tree for my-bucket")
+	tools.GetXRTree(context.Background(), dynamicClient, "platform.example.com", "v1alpha1", "xbuckets", "my-bucket", "default")
+
+	fmt.Println("\n>>> GetXRTree")
+	tree, err := tools.GetXRTree(context.Background(), dynamicClient,
+		"platform.example.com", "v1alpha1", "xbuckets", "my-bucket", "default")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Printf("  XR: %s/%s | ready: %s | synced: %s\n",
+			tree.XRNamespace, tree.XRName, tree.XRReady, tree.XRSynced)
+		fmt.Printf("  Composition: %s | mode: %s\n",
+			tree.CompositionInfo.Name, tree.CompositionInfo.Mode)
+		fmt.Println("  MRs:")
+		for _, mr := range tree.MRs {
+			fmt.Printf("    - %s/%s | ready: %s | synced: %s | providerConfig: %s\n",
+				mr.Kind, mr.Name, mr.Ready, mr.Synced, mr.ProviderConfig)
+		}
+	}
 }

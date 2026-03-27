@@ -55,8 +55,9 @@ type CrossplaneInfo struct {
 type ProviderInfo struct {
 	Name      string
 	Version   string
-	State     string // Installed, Healthy, Unhealthy
+	Health    bool
 	Installed bool
+	State     string // Healthy, Unhealthy, Installing, Unknown
 }
 
 func GetCrossplaneInfo(ctx context.Context, dynamicClient dynamic.Interface, clientset kubernetes.Interface) (*CrossplaneInfo, error) {
@@ -111,8 +112,9 @@ func GetCrossplaneInfo(ctx context.Context, dynamicClient dynamic.Interface, cli
 		result.Providers = append(result.Providers, ProviderInfo{
 			Name:      p.GetName(),
 			Version:   version,
-			State:     state,
+			Health:    state == "Healthy",
 			Installed: true,
+			State:     state,
 		})
 	}
 
