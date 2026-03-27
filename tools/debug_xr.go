@@ -28,6 +28,8 @@ type DebugResult struct {
 }
 
 func DebugXR(ctx context.Context, dynamicClient dynamic.Interface, clientset kubernetes.Interface, group, version, resource, name, namespace string) (*DebugResult, error) {
+	var allEvents []EventInfo
+
 	result := &DebugResult{
 		XRName:      name,
 		XRNamespace: namespace,
@@ -42,11 +44,21 @@ func DebugXR(ctx context.Context, dynamicClient dynamic.Interface, clientset kub
 	result.XRReady = tree.XRReady
 	result.XRSynced = tree.XRSynced
 
-	// Step 2: get events
-	events, err := GetEvents(ctx, clientset, name, namespace)
+	// 1. XR events
+	xrEvents, err := GetEvents(ctx, clientset, name, namespace, resource)
 	if err == nil {
-		result.Events = events
+		allEvents = append(allEvents, xrEvents...)
 	}
+
+	// 2. MR events
+	for _, mr := range tree.MRs {
+		mrEvents, err := GetEvents(ctx, clientset, mr.Name, namespace, mr.Kind)
+		if err == nil {
+			allEvents = append(allEvents, mrEvents...)
+		}
+	}
+
+	result.Events = allEvents
 
 	// Step 3: diagnose
 	result.Diagnosis = diagnose(tree, result.Events)
@@ -168,10 +180,13 @@ func analyzeMRError(mr MRTreeInfo) (string, string) {
 
 func extractEventMessages(events []EventInfo) []string {
 	var messages []string
+
 	for _, e := range events {
 		if e.Type == "Warning" {
-			messages = append(messages, fmt.Sprintf("[%s] %s", e.Reason, e.Message))
+			msg := fmt.Sprintf("[%s] %s (%s)", e.Reason, e.Message, e.Object)
+			messages = append(messages, msg)
 		}
 	}
+
 	return messages
 }

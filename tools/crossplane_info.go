@@ -39,6 +39,7 @@ type CrossplaneInfo struct {
 	HasMRDs          bool // v2 only
 	HasOperations    bool // v2 only
 	HasNamespacedXRs bool // v2 only
+	HasNamespacedMRs bool // v2 only
 
 	// XRD summary
 	TotalXRDs      int
@@ -68,11 +69,13 @@ func GetCrossplaneInfo(ctx context.Context, dynamicClient dynamic.Interface, cli
 		LabelSelector: "app=crossplane",
 	})
 	if err == nil && len(pods.Items) > 0 {
-		for _, container := range pods.Items[0].Spec.Containers {
-			if container.Name == "crossplane" {
-				// extract version from image tag e.g. crossplane/crossplane:v2.0.1
-				result.Version = extractImageTag(container.Image)
-				result.MajorVersion = extractMajorVersion(result.Version)
+		for _, pod := range pods.Items {
+			for _, container := range pod.Spec.Containers {
+				if container.Name == "crossplane" {
+					result.Version = extractImageTag(container.Image)
+					result.MajorVersion = extractMajorVersion(result.Version)
+					break
+				}
 			}
 		}
 	}
@@ -82,7 +85,7 @@ func GetCrossplaneInfo(ctx context.Context, dynamicClient dynamic.Interface, cli
 	result.HasMRDs = err == nil
 
 	// Step 3: detect operations support
-	_, err = dynamicClient.Resource(xrdGVR).List(ctx, metav1.ListOptions{})
+	_, err = dynamicClient.Resource(operationsGVR).List(ctx, metav1.ListOptions{})
 	result.HasOperations = err == nil
 
 	// Step 4: scan XRDs and check their scope
@@ -108,7 +111,7 @@ func GetCrossplaneInfo(ctx context.Context, dynamicClient dynamic.Interface, cli
 	}
 	for _, p := range providers.Items {
 		state := resolveProviderState(p.Object)
-		version := getNestedString(p.Object, "status", "currentRevision")
+		version := getNestedString(p.Object, "status", "package")
 		result.Providers = append(result.Providers, ProviderInfo{
 			Name:      p.GetName(),
 			Version:   version,

@@ -86,7 +86,7 @@ func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, er
 		var items []interface{}
 
 		if xrObject.Scope == "Namespaced" {
-			list, err := dynamicClient.Resource(xrGVR).Namespace("").List(ctx, metav1.ListOptions{})
+			list, err := dynamicClient.Resource(xrGVR).Namespace(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
 			if err != nil {
 				fmt.Printf("warning: could not list %s: %v\n", xrObject.Resource, err)
 				continue
@@ -112,7 +112,8 @@ func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, er
 			}
 
 			var xrInfo XRInfo
-			if getNestedString(obj, "metadata", "namespace") != "unknown" {
+			ns := getNestedString(obj, "metadata", "namespace")
+			if ns != "" && ns != "unknown" {
 				xrInfo = XRInfo{
 					Name:           getNestedString(obj, "metadata", "name"),
 					Namespace:      getNestedString(obj, "metadata", "namespace"),
@@ -121,7 +122,7 @@ func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, er
 					Synced:         resolveConditionStatus(obj, "Synced"),
 					Age:            getNestedString(obj, "metadata", "creationTimestamp"),
 					CompositionRef: getNestedString(obj, "spec", "compositionRef", "name"),
-					Scope:          "NameSpaced",
+					Scope:          "Namespaced",
 					Group:          xrObject.Group,
 				}
 			} else {

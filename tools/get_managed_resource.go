@@ -116,7 +116,7 @@ func ListManagedResources(ctx context.Context, client dynamic.Interface) ([]Mana
 		// Finding all resources of the Managed Resource.
 		var items []map[string]interface{}
 		if scope == "Namespaced" {
-			list, err := client.Resource(mrGVR).Namespace("").List(ctx, metav1.ListOptions{})
+			list, err := client.Resource(mrGVR).Namespace(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
 			if err != nil {
 				continue
 			}

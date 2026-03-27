@@ -26,6 +26,7 @@ type XRTreeInfo struct {
 	XRNamespace     string
 	XRReady         string
 	XRSynced        string
+	XRKind          string
 	CompositionInfo CompositionInfo
 	MRs             []MRTreeInfo
 }
@@ -67,6 +68,7 @@ func GetXRTree(ctx context.Context, dynamicClient dynamic.Interface, group, vers
 	result.XRNamespace = getNestedString(xrObj, "metadata", "namespace")
 	result.XRReady = resolveConditionStatus(xrObj, "Ready")
 	result.XRSynced = resolveConditionStatus(xrObj, "Synced")
+	result.XRKind = getNestedString(xrObj, "spec", "names", "kind")
 
 	// fetch composition — not fatal if missing
 	compositionUsed := getNestedString(xrObj, "spec", "crossplane", "compositionRef", "name")

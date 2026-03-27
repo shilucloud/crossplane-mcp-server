@@ -22,7 +22,7 @@ func ListProviders(ctx context.Context, dynamicClient dynamic.Interface) ([]Prov
 	}
 	for _, p := range providers.Items {
 		state := resolveProviderState(p.Object)
-		version := getNestedString(p.Object, "status", "currentRevision")
+		version := getNestedString(p.Object, "status", "package")
 		result = append(result, ProviderInfo{
 			Name:      p.GetName(),
 			Version:   version,
@@ -45,7 +45,6 @@ func CheckAllProviderHealth(ctx context.Context, dynamicClient dynamic.Interface
 
 	for _, p := range providers.Items {
 		state := resolveProviderState(p.Object)
-
 		result = append(result, ProviderHealth{
 			ProviderName: p.GetName(),
 			Health:       state == "Healthy",
