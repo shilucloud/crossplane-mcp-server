@@ -194,7 +194,7 @@ func main() {
 
 	fmt.Println("\n>>> GetXRTree")
 	tree, err := tools.GetXRTree(context.Background(), dynamicClient,
-		"platform.example.com", "v1alpha1", "xbuckets", "my-bucket", "default")
+		"platform.example.com", "v1alpha1", "xbuckets", "new-bucket", "default")
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	} else {
@@ -205,7 +205,73 @@ func main() {
 		fmt.Println("  MRs:")
 		for _, mr := range tree.MRs {
 			fmt.Printf("    - %s/%s | ready: %s | synced: %s | providerConfig: %s\n",
-				mr.Kind, mr.Name, mr.Ready, mr.Synced, mr.ProviderConfig)
+				mr.Kind, mr.Name, mr.Ready, mr.Synced, mr.ProviderConfigName)
 		}
 	}
+
+	fmt.Println("\n>>> DebugXR")
+	debugResult, err := tools.DebugXR(
+		context.Background(), dynamicClient, clientset,
+		"platform.example.com", "v1alpha1", "xbuckets",
+		"bucketwithnocomposition", "default")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Printf("  XR: %s/%s | ready: %s | synced: %s\n",
+			debugResult.XRNamespace, debugResult.XRName,
+			debugResult.XRReady, debugResult.XRSynced)
+		fmt.Printf("\n  === DIAGNOSIS ===\n")
+		fmt.Printf("  Severity:     %s\n", debugResult.Diagnosis.Severity)
+		fmt.Printf("  Root Cause:   %s\n", debugResult.Diagnosis.RootCause)
+		fmt.Printf("  Affected Path:%s\n", debugResult.Diagnosis.AffectedPath)
+		fmt.Printf("  Suggested Fix:%s\n", debugResult.Diagnosis.SuggestedFix)
+		fmt.Printf("\n  === EVENTS ===\n")
+		for _, d := range debugResult.Diagnosis.Details {
+			fmt.Printf("  - %s\n", d)
+		}
+	}
+
+	// list all the compositions:
+	fmt.Println("-------printing all compositions--------")
+	compositions, err := tools.ListComposition(context.Background(), dynamicClient)
+	if err != nil {
+		fmt.Errorf("Error while listing composition %s", err)
+	}
+
+	for _, composition := range compositions {
+		fmt.Printf("Name: %s\n", composition.Name)
+	}
+
+	// new tools by the opencode
+	fmt.Println("=====create tool======")
+	spec := map[string]interface{}{
+		"crossplane": map[string]interface{}{
+			"compositionRef": map[string]interface{}{
+				"name": "xbuckets-aws",
+			},
+		},
+		"parameters": map[string]interface{}{
+			"region11":          "ap-south-1",
+			"versioningEnabled": false,
+		},
+	}
+	xrRes, err := tools.CreateXR(context.Background(), dynamicClient, "platform.example.com/v1alpha1", "XBucket", "opencode-bucket", "default", spec)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("Name: %s and Message %s\n", xrRes.Name, xrRes.Message)
+
+	// list all xrd schema
+	fmt.Println("-------printing all xrd schema--------")
+	xrdSchemas, err := tools.ListAllXRDSchemas(context.Background(), dynamicClient)
+	if err != nil {
+		fmt.Errorf("Error while listing XRD schemas: %s", err)
+	}
+
+	for _, xrdSchema := range xrdSchemas {
+		fmt.Printf("Name: %s\n", xrdSchema.Name)
+		fmt.Println(xrdSchema.ValidationSchema)
+	}
+
 }

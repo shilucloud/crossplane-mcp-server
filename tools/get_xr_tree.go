@@ -5,24 +5,20 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
 
-type CompositionInfo struct {
-	Name     string
-	Mode     string
-	Pipeline []interface{}
-}
-
 type MRTreeInfo struct {
-	Name           string
-	Kind           string
-	Group          string
-	Version        string
-	Ready          string
-	Synced         string
-	ProviderConfig string
+	Name               string
+	Kind               string
+	Group              string
+	Version            string
+	Ready              string
+	Synced             string
+	ProviderConfigInfo ProviderConfigInfo
+	ProviderConfigName string
 }
 
 type XRTreeInfo struct {
@@ -97,36 +93,59 @@ func GetXRTree(ctx context.Context, dynamicClient dynamic.Interface, group, vers
 			continue
 		}
 
-		apiVersion := getString(mrMap, "apiVersion") // e.g. "s3.aws.upbound.io/v1beta1"
+		apiVersion := getString(mrMap, "apiVersion")
 		kind := getString(mrMap, "kind")
 		mrName := getString(mrMap, "name")
 
-		// split apiVersion into group and version
-		group, version := splitAPIVersion(apiVersion)
-
-		// find plural for this kind to build GVR
+		mrGroup, mrVersion := splitAPIVersion(apiVersion)
 		plural := kindToPlural(kind)
 
 		mrGVR := schema.GroupVersionResource{
-			Group:    group,
-			Version:  version,
+			Group:    mrGroup,
+			Version:  mrVersion,
 			Resource: plural,
 		}
 
-		// fetch actual MR to get status
-		mrObj, err := dynamicClient.Resource(mrGVR).Get(ctx, mrName, metav1.GetOptions{})
+		// fetch actual MR — declare err here so it's accessible below
+		var mrObj *unstructured.Unstructured
+		var err error
+
+		if namespace != "" {
+			mrObj, err = dynamicClient.Resource(mrGVR).Namespace(namespace).Get(ctx, mrName, metav1.GetOptions{})
+		} else {
+			mrObj, err = dynamicClient.Resource(mrGVR).Get(ctx, mrName, metav1.GetOptions{})
+		}
 
 		mrInfo := MRTreeInfo{
 			Name:    mrName,
 			Kind:    kind,
-			Group:   group,
-			Version: version,
+			Group:   mrGroup,
+			Version: mrVersion,
 		}
 
 		if err == nil {
+			mrInfo.ProviderConfigName = getNestedString(mrObj.Object, "spec", "providerConfigRef", "name")
 			mrInfo.Ready = resolveConditionStatus(mrObj.Object, "Ready")
 			mrInfo.Synced = resolveConditionStatus(mrObj.Object, "Synced")
-			mrInfo.ProviderConfig = getNestedString(mrObj.Object, "spec", "providerConfigRef", "name")
+
+			pcGroup := mrGroupToProviderConfigGroup(mrInfo.Group)
+			pcGVR := schema.GroupVersionResource{
+				Group:    pcGroup,
+				Version:  "v1beta1",
+				Resource: "providerconfigs",
+			}
+
+			pcObj, pcErr := dynamicClient.Resource(pcGVR).Get(ctx, mrInfo.ProviderConfigName, metav1.GetOptions{})
+			if pcErr == nil {
+				mrInfo.ProviderConfigInfo = ProviderConfigInfo{
+					Group:  pcGroup,
+					Ready:  resolveConditionStatus(pcObj.Object, "Ready"),
+					Synced: resolveConditionStatus(pcObj.Object, "Synced"),
+				}
+			}
+		} else {
+			mrInfo.Ready = "NotFound"
+			mrInfo.Synced = "NotFound"
 		}
 
 		result.MRs = append(result.MRs, mrInfo)
@@ -135,7 +154,6 @@ func GetXRTree(ctx context.Context, dynamicClient dynamic.Interface, group, vers
 	return result, nil
 }
 
-// splitAPIVersion splits "s3.aws.upbound.io/v1beta1" into group and version
 func splitAPIVersion(apiVersion string) (string, string) {
 	parts := strings.SplitN(apiVersion, "/", 2)
 	if len(parts) == 2 {
@@ -144,8 +162,6 @@ func splitAPIVersion(apiVersion string) (string, string) {
 	return apiVersion, ""
 }
 
-// kindToPlural is a simple lowercase + s pluralization
-// good enough for most Crossplane resources
 func kindToPlural(kind string) string {
 	return strings.ToLower(kind) + "s"
 }
@@ -170,4 +186,12 @@ func getNestedSlice(obj map[string]interface{}, fields ...string) []interface{} 
 		}
 	}
 	return nil
+}
+
+func mrGroupToProviderConfigGroup(mrGroup string) string {
+	parts := strings.SplitN(mrGroup, ".", 2)
+	if len(parts) == 2 {
+		return parts[1]
+	}
+	return mrGroup
 }
