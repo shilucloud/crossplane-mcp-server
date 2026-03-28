@@ -8,11 +8,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type ProviderHealth struct {
-	ProviderName string
-	Health       bool
-}
-
 func ListProviders(ctx context.Context, dynamicClient dynamic.Interface) ([]ProviderInfo, error) {
 	result := []ProviderInfo{}
 
@@ -44,10 +39,9 @@ func CheckAllProviderHealth(ctx context.Context, dynamicClient dynamic.Interface
 	}
 
 	for _, p := range providers.Items {
-		state := resolveProviderState(p.Object)
+		//state := resolveProviderState(p.Object)
 		result = append(result, ProviderHealth{
 			ProviderName: p.GetName(),
-			Health:       state == "Healthy",
 		})
 	}
 	return result, nil

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/shilucloud/crossplane-agent/tools"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func main() {
@@ -18,8 +19,8 @@ func main() {
 
 	dynamicClient := kubernetesClients.DynamicClient
 	clientset := kubernetesClients.Clientset
-	//restMapper := kubernetesClients.RESTMapper
-
+	restMapper := kubernetesClients.RESTMapper
+	discoveryClient := kubernetesClients.DiscoveryClient
 	// List Operations, CronOperations, WatchOperations.
 	summary, err := tools.ListOperations(context.Background(), dynamicClient)
 	if err != nil {
@@ -133,7 +134,7 @@ func main() {
 	}
 
 	for _, ph := range providerHealth {
-		fmt.Printf("Provider: %s | Healthy: %t\n", ph.ProviderName, ph.Health)
+		fmt.Printf("Provider: %s | Healthy: %t\n", ph.ProviderName)
 	}
 
 	// Get events for a specific XR
@@ -231,4 +232,95 @@ func main() {
 		fmt.Printf("Name: %s\n", composition.Name)
 	}
 
+	// discover all the gvr
+	resources, err := discoveryClient.ServerPreferredResources()
+	if err != nil {
+		panic(err)
+	}
+
+	for _, list := range resources {
+		gv, _ := schema.ParseGroupVersion(list.GroupVersion)
+
+		for _, r := range list.APIResources {
+			if r.Kind == "ProviderConfig" {
+				fmt.Printf("Group: %s | Version: %s | Resource: %s\n",
+					gv.Group,
+					gv.Version,
+					r.Name,
+				)
+			}
+		}
+	}
+
+	fmt.Println("===================provider health==============")
+
+	// get provider health summary
+	providerHealthSummary, err := tools.GetProviderHealth(context.Background(), dynamicClient, &discoveryClient)
+	if err != nil {
+		fmt.Printf("error getting provider health summary: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("\n=== Provider Health Summary ===\n")
+	fmt.Printf("Total Providers: %d\n", providerHealthSummary.TotalProviders)
+	fmt.Printf("Healthy Providers: %d\n", providerHealthSummary.HealthyProviders)
+	fmt.Printf("Unhealthy Providers: %d\n", providerHealthSummary.UnhealthyProviders)
+
+	for _, ph := range providerHealthSummary.Providers {
+		fmt.Println("========providers=============")
+		fmt.Printf("Provider: %s | Healthy: %t\n", ph.ProviderName, ph.Healthy)
+		for _, phconfig := range ph.ProviderConfigs {
+			fmt.Printf("  - ProviderConfig: %s/%s | Ready: %s | Synced: %s | SecretRef: %s\n",
+				phconfig.Namespace, phconfig.Name, phconfig.Ready, phconfig.Synced, phconfig.SecretRef)
+		}
+		for _, c := range ph.Conditions {
+			fmt.Printf("  - Condition: Type: %s | Status: %s | Reason: %s | Message: %s | LastTransitionTime: %s | ObservedGeneration: %d\n",
+				c.Type, c.Status, c.Reason, c.Message, c.LastTransitionTime, c.ObservedGeneration)
+		}
+
+		for _, phconfig := range ph.ProviderConfigs {
+			fmt.Printf("  - ProviderConfig: %s/%s | Ready: %s | Synced: %s | SecretRef: %s\n",
+				phconfig.Namespace, phconfig.Name, phconfig.Ready, phconfig.Synced, phconfig.SecretRef)
+		}
+
+	}
+
+	fmt.Println("=======providerconfig==========")
+
+	// check providerconfig
+	providerConfig, err := tools.CheckProviderConfig(
+		context.Background(),
+		dynamicClient,
+		clientset,
+		restMapper,
+		"ProviderConfig",
+		"aws.m.upbound.io",
+		"aws-provider",
+		"default",
+	)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("providerConfig Name %s\n", providerConfig.Name)
+	fmt.Printf("providerConfig Namespace %s\n", providerConfig.CredentialNamespace)
+	fmt.Printf("providerConfig secreet %s\n", providerConfig.SecretName)
+	fmt.Printf("providerConfig Synced %s\n", providerConfig.Synced)
+	fmt.Printf("providerConfig Conditions %s\n", providerConfig.Conditions)
+	fmt.Printf("Credential exist %s\n", providerConfig.SecretExists)
+	fmt.Printf("Providerconfig users %s\n", providerConfig.Users)
+
+	fmt.Printf("======annotate resouce ====")
+	fmt.Println("\n>>> AnnotateReconcile")
+	reconcileResult, err := tools.AnnotateReconcile(
+		context.Background(), dynamicClient,
+		"platform.example.com", "v1alpha1", "xbuckets",
+		"new-bucket", "default")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Printf("  triggered: %v | message: %s\n",
+			reconcileResult.Triggered, reconcileResult.Message)
+	}
 }
