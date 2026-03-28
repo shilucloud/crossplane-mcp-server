@@ -250,6 +250,36 @@ func diagnoseWithContext(ctx context.Context, dynamicClient dynamic.Interface, c
 		}
 	}
 
+	// rbac forbidden
+	for _, e := range events {
+		if strings.Contains(e.Message, "forbidden") &&
+			strings.Contains(e.Message, "cannot patch resource") {
+			return Diagnosis{
+				RootCause:    "Crossplane service account lacks RBAC permissions to manage namespaced MRs",
+				Severity:     "Critical",
+				AffectedPath: tree.XRName,
+				SuggestedFix: "Grant permissions: kubectl create clusterrolebinding crossplane-admin --clusterrole=cluster-admin --serviceaccount=crossplane-system:crossplane",
+				Details:      extractEventMessages(events),
+			}
+		}
+	}
+
+	// Resource not found in API group (MRD inactive or provider not installed)
+	for _, e := range events {
+		if strings.Contains(e.Message, "no resource found for") &&
+			strings.Contains(e.Message, "Kind=") {
+			// extract the missing kind from message
+			kind := extractKindFromMessage(e.Message)
+			return Diagnosis{
+				RootCause:    fmt.Sprintf("Resource type '%s' not found — provider may not be installed or MRD is inactive", kind),
+				Severity:     "Critical",
+				AffectedPath: tree.XRName,
+				SuggestedFix: "Check if the provider is installed and healthy: kubectl get providers. If using v2 MRDs, check MRD state is Active.",
+				Details:      extractEventMessages(events),
+			}
+		}
+	}
+
 	return Diagnosis{
 		RootCause:    "No issues found",
 		Severity:     "Info",
@@ -443,6 +473,12 @@ func extractFunctionName(message string) string {
 func analyzeMRError(mr MRTreeInfo) (string, string) {
 	synced := mr.Synced
 
+	if strings.Contains(synced, "referenced field was empty") ||
+		strings.Contains(synced, "cannot resolve references") {
+		return fmt.Sprintf("Cross-resource reference not resolved yet for '%s' — a dependent resource may not be ready", mr.Name),
+			"Check if the referenced resource (e.g. VPC) is Ready=True. If credentials are invalid, the referenced resource may appear created but have no external ID."
+	}
+
 	if strings.Contains(synced, "connect failed") || strings.Contains(synced, "cannot initialize") {
 		return fmt.Sprintf("Provider cannot connect to cloud API. ProviderConfig '%s' credentials may be invalid or missing", mr.ProviderConfigName),
 			fmt.Sprintf("Check the credentials secret referenced by ProviderConfig '%s'. Ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are valid.", mr.ProviderConfigName)
@@ -481,4 +517,17 @@ func extractEventMessages(events []EventInfo) []string {
 		}
 	}
 	return messages
+}
+
+func extractKindFromMessage(message string) string {
+	// "no resource found for ec2.aws.m.upbound.io/v1beta1, Kind=VPC"
+	if idx := strings.Index(message, "Kind="); idx != -1 {
+		kind := message[idx+5:]
+		// trim anything after space or quote
+		if end := strings.IndexAny(kind, " \"'"); end != -1 {
+			kind = kind[:end]
+		}
+		return kind
+	}
+	return "unknown"
 }

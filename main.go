@@ -105,15 +105,15 @@ func main() {
 	//		fmt.Printf("synced: %s\n", mr.Synced)
 	//	}
 
-	mrDetails, err := tools.GetManagedResource(context.Background(), dynamicClient, "s3.aws.upbound.io", "v1beta2", "Bucket", "test-crossplane-connection-11222222", "default")
+	//mrDetails, err := tools.GetManagedResource(context.Background(), dynamicClient, "s3.aws.upbound.io", "v1beta2", "Bucket", "test-crossplane-connection-11222222", "default")
 
-	if err != nil {
-		fmt.Println(err)
-	}
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
 
-	fmt.Println("------mr detail------")
+	//fmt.Println("------mr detail------")
 
-	fmt.Printf(mrDetails.Name)
+	//fmt.Printf(mrDetails.Name)
 
 	// list all providers
 	providers, err := tools.ListProviders(context.Background(), dynamicClient)
@@ -141,7 +141,6 @@ func main() {
 	events, err := tools.GetEventsByUID(context.Background(), clientset, "df468c3f-f092-49ad-844d-453458ba594a")
 	if err != nil {
 		fmt.Printf("error getting events: %v\n", err)
-		os.Exit(1)
 	}
 
 	fmt.Printf("\n=== Events for example-xr ===\n")
@@ -156,7 +155,6 @@ func main() {
 	conditions, err := tools.GetConditions(context.Background(), dynamicClient, "s3.aws.upbound.io", "v1beta1", "buckets", "test-crossplane-connection-11222222", "")
 	if err != nil {
 		fmt.Printf("error getting conditions: %v\n", err)
-		os.Exit(1)
 	}
 
 	fmt.Printf("\n=== Conditions for example-xr ===\n")
@@ -169,7 +167,6 @@ func main() {
 	xrconditions, err := tools.GetConditions(context.Background(), dynamicClient, "platform.example.com", "v1alpha1", "xbuckets", "my-bucket", "default")
 	if err != nil {
 		fmt.Printf("error getting conditions: %v\n", err)
-		os.Exit(1)
 	}
 
 	fmt.Printf("\n=== Conditions for example-xr ===\n")
@@ -184,7 +181,7 @@ func main() {
 
 	fmt.Println("\n>>> GetXRTree")
 	tree, err := tools.GetXRTree(context.Background(), dynamicClient,
-		"platform.example.com", "v1alpha1", "xbuckets", "new-bucket", "default")
+		"platform.example.com", "v1alpha1", "xnetworks", "my-network", "default")
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	} else {
@@ -202,8 +199,8 @@ func main() {
 	fmt.Println("\n>>> DebugXR")
 	debugResult, err := tools.DebugXR(
 		context.Background(), dynamicClient, clientset,
-		"platform.example.com", "v1alpha1", "xbuckets",
-		"bucketwithnocomposition", "default")
+		"platform.example.com", "v1alpha1", "xnetworks",
+		"my-network", "default")
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	} else {
@@ -315,8 +312,8 @@ func main() {
 	fmt.Println("\n>>> AnnotateReconcile")
 	reconcileResult, err := tools.AnnotateReconcile(
 		context.Background(), dynamicClient,
-		"platform.example.com", "v1alpha1", "xbuckets",
-		"new-bucket", "default")
+		"platform.example.com", "v1alpha1", "xnetworks",
+		"my-network", "default")
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	} else {
@@ -325,7 +322,7 @@ func main() {
 	}
 
 	fmt.Println("\n>>> ExplainComposition")
-	explanation, err := tools.ExplainComposition(context.Background(), dynamicClient, "xbuckets-aws")
+	explanation, err := tools.ExplainComposition(context.Background(), dynamicClient, "xnetworks-aws")
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	} else {
@@ -334,5 +331,16 @@ func main() {
 		fmt.Printf("  totalResources: %d | totalFunctions: %d\n",
 			explanation.TotalResources, explanation.TotalFunctions)
 		fmt.Printf("\n  Summary:\n%s\n", explanation.Summary)
+	}
+
+	fmt.Println("\n>>> BuildDependencyGraph")
+	graph, err := tools.BuildDependencyGraph(
+		context.Background(), dynamicClient, clientset,
+		"platform.example.com", "v1alpha1", "xnetworks",
+		"my-network", "default")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Println(tools.PrintDependencyGraph(graph, "", true))
 	}
 }
