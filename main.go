@@ -323,4 +323,16 @@ func main() {
 		fmt.Printf("  triggered: %v | message: %s\n",
 			reconcileResult.Triggered, reconcileResult.Message)
 	}
+
+	fmt.Println("\n>>> ExplainComposition")
+	explanation, err := tools.ExplainComposition(context.Background(), dynamicClient, "xbuckets-aws")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Printf("  name: %s | mode: %s | forKind: %s\n",
+			explanation.Name, explanation.Mode, explanation.ForKind)
+		fmt.Printf("  totalResources: %d | totalFunctions: %d\n",
+			explanation.TotalResources, explanation.TotalFunctions)
+		fmt.Printf("\n  Summary:\n%s\n", explanation.Summary)
+	}
 }
