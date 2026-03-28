@@ -6,30 +6,19 @@ import (
 	"os"
 
 	"github.com/shilucloud/crossplane-agent/tools"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
-	kubeconfig := os.Getenv("KUBECONFIG")
-	if kubeconfig == "" {
-		kubeconfig = os.Getenv("HOME") + "/.kube/config"
-	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	kubernetesClients, err := NewKubernetesClients("")
 	if err != nil {
-		fmt.Printf("error building kubeconfig: %v\n", err)
+		fmt.Printf("error creating Kubernetes clients: %v\n", err)
 		os.Exit(1)
 	}
 
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		fmt.Printf("error creating dynamic client: %v\n", err)
-		os.Exit(1)
-	}
-
-	clientset := kubernetes.NewForConfigOrDie(config)
+	dynamicClient := kubernetesClients.DynamicClient
+	clientset := kubernetesClients.Clientset
+	//restMapper := kubernetesClients.RESTMapper
 
 	// List Operations, CronOperations, WatchOperations.
 	summary, err := tools.ListOperations(context.Background(), dynamicClient)
@@ -148,7 +137,7 @@ func main() {
 	}
 
 	// Get events for a specific XR
-	events, err := tools.GetEvents(context.Background(), clientset, "my-bucket", "default")
+	events, err := tools.GetEventsByUID(context.Background(), clientset, "df468c3f-f092-49ad-844d-453458ba594a")
 	if err != nil {
 		fmt.Printf("error getting events: %v\n", err)
 		os.Exit(1)
@@ -240,38 +229,6 @@ func main() {
 
 	for _, composition := range compositions {
 		fmt.Printf("Name: %s\n", composition.Name)
-	}
-
-	// new tools by the opencode
-	fmt.Println("=====create tool======")
-	spec := map[string]interface{}{
-		"crossplane": map[string]interface{}{
-			"compositionRef": map[string]interface{}{
-				"name": "xbuckets-aws",
-			},
-		},
-		"parameters": map[string]interface{}{
-			"region11":          "ap-south-1",
-			"versioningEnabled": false,
-		},
-	}
-	xrRes, err := tools.CreateXR(context.Background(), dynamicClient, "platform.example.com/v1alpha1", "XBucket", "opencode-bucket", "default", spec)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Printf("Name: %s and Message %s\n", xrRes.Name, xrRes.Message)
-
-	// list all xrd schema
-	fmt.Println("-------printing all xrd schema--------")
-	xrdSchemas, err := tools.ListAllXRDSchemas(context.Background(), dynamicClient)
-	if err != nil {
-		fmt.Errorf("Error while listing XRD schemas: %s", err)
-	}
-
-	for _, xrdSchema := range xrdSchemas {
-		fmt.Printf("Name: %s\n", xrdSchema.Name)
-		fmt.Println(xrdSchema.ValidationSchema)
 	}
 
 }

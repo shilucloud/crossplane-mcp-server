@@ -20,24 +20,14 @@ type EventInfo struct {
 	Count        int32
 }
 
-func GetEvents(
+func GetEventsByUID(
 	ctx context.Context,
 	clientset kubernetes.Interface,
-	name, namespace, kind string,
+	uid string,
 ) ([]EventInfo, error) {
 
-	if namespace == "" {
-		namespace = metav1.NamespaceAll
-	}
-
-	fieldSelector := fmt.Sprintf(
-		"involvedObject.name=%s,involvedObject.kind=%s",
-		name, kind,
-	)
-
-	events, err := clientset.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
-		FieldSelector: fieldSelector,
-		Limit:         100,
+	events, err := clientset.CoreV1().Events("").List(ctx, metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("involvedObject.uid=%s", uid),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error getting events: %w", err)

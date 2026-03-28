@@ -11,6 +11,7 @@ import (
 )
 
 type MRTreeInfo struct {
+	UID                string
 	Name               string
 	Kind               string
 	Group              string
@@ -22,6 +23,7 @@ type MRTreeInfo struct {
 }
 
 type XRTreeInfo struct {
+	UID             string
 	XRName          string
 	XRNamespace     string
 	XRReady         string
@@ -64,6 +66,7 @@ func GetXRTree(ctx context.Context, dynamicClient dynamic.Interface, group, vers
 		xrObj = o.Object
 	}
 
+	result.UID = getNestedString(xrObj, "metadata", "uid")
 	result.XRName = getNestedString(xrObj, "metadata", "name")
 	result.XRNamespace = getNestedString(xrObj, "metadata", "namespace")
 	result.XRReady = resolveConditionStatus(xrObj, "Ready")
@@ -126,6 +129,7 @@ func GetXRTree(ctx context.Context, dynamicClient dynamic.Interface, group, vers
 		}
 
 		if err == nil {
+			mrInfo.UID = getNestedString(mrObj.Object, "metadata", "uid")
 			mrInfo.ProviderConfigName = getNestedString(mrObj.Object, "spec", "providerConfigRef", "name")
 			mrInfo.Ready = resolveConditionStatus(mrObj.Object, "Ready")
 			mrInfo.Synced = resolveConditionStatus(mrObj.Object, "Synced")

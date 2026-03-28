@@ -23,6 +23,7 @@ var (
 )
 
 type ManagedResourceInfo struct {
+	UID       string
 	Name      string
 	Namespace string
 	Kind      string
@@ -140,6 +141,7 @@ func ListManagedResources(ctx context.Context, client dynamic.Interface) ([]Mana
 
 		for _, obj := range items {
 			result = append(result, ManagedResourceInfo{
+				UID:       getNestedString(obj, "metadata", "uid"),
 				Name:      getNestedString(obj, "metadata", "name"),
 				Namespace: getNestedString(obj, "metadata", "namespace"),
 				Kind:      kind,
