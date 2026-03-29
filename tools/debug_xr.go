@@ -60,6 +60,7 @@ func DebugXR(ctx context.Context, dynamicClient dynamic.Interface, clientset kub
 	if err != nil {
 		return nil, fmt.Errorf("error getting XR tree: %w", err)
 	}
+
 	result.Tree = tree
 	result.XRReady = tree.XRReady
 	result.XRSynced = tree.XRSynced

@@ -9,6 +9,11 @@ type ProviderConfigInfo struct {
 	Kind   string
 }
 
+type ResourceField struct {
+	Name   string
+	Fields map[any]any
+}
+
 type ResourceProviderInfo struct {
 	ApiVersion         string
 	Kind               string

@@ -175,27 +175,6 @@ func main() {
 			c.Type, c.Status, c.Reason, c.Message, c.LastTransitionTime, c.ObservedGeneration)
 	}
 
-	// get xrtree
-	fmt.Println("Get xr tree for my-bucket")
-	tools.GetXRTree(context.Background(), dynamicClient, "platform.example.com", "v1alpha1", "xbuckets", "my-bucket", "default")
-
-	fmt.Println("\n>>> GetXRTree")
-	tree, err := tools.GetXRTree(context.Background(), dynamicClient,
-		"platform.example.com", "v1alpha1", "xnetworks", "my-network", "default")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	} else {
-		fmt.Printf("  XR: %s/%s | ready: %s | synced: %s\n",
-			tree.XRNamespace, tree.XRName, tree.XRReady, tree.XRSynced)
-		fmt.Printf("  Composition: %s | mode: %s\n",
-			tree.CompositionInfo.Name, tree.CompositionInfo.Mode)
-		fmt.Println("  MRs:")
-		for _, mr := range tree.MRs {
-			fmt.Printf("    - %s/%s | ready: %s | synced: %s | providerConfig: %s\n",
-				mr.Kind, mr.Name, mr.Ready, mr.Synced, mr.ProviderConfigName)
-		}
-	}
-
 	fmt.Println("\n>>> DebugXR")
 	debugResult, err := tools.DebugXR(
 		context.Background(), dynamicClient, clientset,
@@ -359,20 +338,6 @@ func main() {
 		fmt.Printf("  SuggestedFix: %s\n", mrDebug.Diagnosis.SuggestedFix)
 	}
 
-	fmt.Println("\n>>> DebugProvider")
-	providerDebug, err := tools.DebugProvider(
-		context.Background(), dynamicClient, clientset,
-		"failure")
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-	} else {
-		fmt.Printf("  provider: %s | healthy: %v | state: %s\n",
-			providerDebug.ProviderName, providerDebug.Healthy, providerDebug.State)
-		fmt.Printf("  Severity: %s\n", providerDebug.Diagnosis.Severity)
-		fmt.Printf("  RootCause: %s\n", providerDebug.Diagnosis.RootCause)
-		fmt.Printf("  AffectedMRs: %d\n", providerDebug.AffectedMRs)
-	}
-
 	fmt.Println("\n>>> DebugComposition")
 	compDebug, err := tools.DebugComposition(
 		context.Background(), dynamicClient,
@@ -389,6 +354,27 @@ func main() {
 		for _, f := range compDebug.Functions {
 			fmt.Printf("    - %s | healthy: %v | installed: %v\n",
 				f.Name, f.Healthy, f.Installed)
+		}
+	}
+
+	// get xrtree
+	fmt.Println("Get xr tree for my-bucket")
+	tools.GetXRTree(context.Background(), dynamicClient, "platform.example.com", "v1alpha1", "xbuckets", "my-bucket", "default")
+
+	fmt.Println("\n>>> GetXRTree")
+	tree, err := tools.GetXRTree(context.Background(), dynamicClient,
+		"platform.example.com", "v1alpha1", "xnetworks", "my-network", "default")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Printf("  XR: %s/%s | ready: %s | synced: %s\n",
+			tree.XRNamespace, tree.XRName, tree.XRReady, tree.XRSynced, tree.XRFields["parameters"])
+		fmt.Printf("  Composition: %s | mode: %s\n",
+			tree.CompositionInfo.Name, tree.CompositionInfo.Mode)
+		fmt.Println("  MRs:")
+		for _, mr := range tree.MRs {
+			fmt.Printf("    - %s/%s | ready: %s | synced: %s | providerConfig: %s\n",
+				mr.Kind, mr.Name, mr.Ready, mr.Synced, mr.ProviderConfigName)
 		}
 	}
 
