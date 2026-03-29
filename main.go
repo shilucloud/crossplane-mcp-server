@@ -343,4 +343,53 @@ func main() {
 	} else {
 		fmt.Println(tools.PrintDependencyGraph(graph, "", true))
 	}
+
+	fmt.Println("\n>>> DebugMR")
+	mrDebug, err := tools.DebugMR(
+		context.Background(), dynamicClient, clientset, restMapper,
+		"ec2.aws.m.upbound.io", "v1beta1", "Subnet",
+		"my-network-3f0b34ccde33", "default")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Printf("  %s/%s | ready: %s | synced: %s\n",
+			mrDebug.Kind, mrDebug.Name, mrDebug.Ready, mrDebug.Synced)
+		fmt.Printf("  Severity: %s\n", mrDebug.Diagnosis.Severity)
+		fmt.Printf("  RootCause: %s\n", mrDebug.Diagnosis.RootCause)
+		fmt.Printf("  SuggestedFix: %s\n", mrDebug.Diagnosis.SuggestedFix)
+	}
+
+	fmt.Println("\n>>> DebugProvider")
+	providerDebug, err := tools.DebugProvider(
+		context.Background(), dynamicClient, clientset,
+		"failure")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Printf("  provider: %s | healthy: %v | state: %s\n",
+			providerDebug.ProviderName, providerDebug.Healthy, providerDebug.State)
+		fmt.Printf("  Severity: %s\n", providerDebug.Diagnosis.Severity)
+		fmt.Printf("  RootCause: %s\n", providerDebug.Diagnosis.RootCause)
+		fmt.Printf("  AffectedMRs: %d\n", providerDebug.AffectedMRs)
+	}
+
+	fmt.Println("\n>>> DebugComposition")
+	compDebug, err := tools.DebugComposition(
+		context.Background(), dynamicClient,
+		"failure")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	} else {
+		fmt.Printf("  composition: %s | mode: %s | forKind: %s\n",
+			compDebug.Name, compDebug.Mode, compDebug.ForKind)
+		fmt.Printf("  Severity: %s\n", compDebug.Diagnosis.Severity)
+		fmt.Printf("  RootCause: %s\n", compDebug.Diagnosis.RootCause)
+		fmt.Printf("  XRs using it: %v\n", compDebug.XRsUsing)
+		fmt.Printf("  Functions:\n")
+		for _, f := range compDebug.Functions {
+			fmt.Printf("    - %s | healthy: %v | installed: %v\n",
+				f.Name, f.Healthy, f.Installed)
+		}
+	}
+
 }
