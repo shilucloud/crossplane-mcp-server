@@ -1,0 +1,23 @@
+name: crossplane-agent
+framework: mcp-go
+version: 0.1.0
+description: this is kagent hackaton project
+author: shilash
+email: shilu4577@gmail.com
+secrets:
+    local:
+        enabled: false
+        provider: env
+        file: .env.local
+    production:
+        enabled: false
+        provider: kubernetes
+        secretName: crossplane-agent-secrets-production
+        namespace: default
+    staging:
+        enabled: false
+        provider: kubernetes
+        secretName: crossplane-agent-secrets-staging
+        namespace: default
+created_at: 2026-03-30T07:48:03.548917008+05:30
+updated_at: 2026-03-30T07:48:03.593101284+05:30
