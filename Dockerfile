@@ -1,22 +1,11 @@
-# Build stage
-FROM golang:1.23.0-alpine AS builder
-
+FROM golang:1.25-alpine AS builder
 WORKDIR /app
-
 COPY go.mod go.sum ./
 RUN go mod download
-
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o crossplane-agent ./cmd/server
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/server ./cmd/server
-
-# Final stage
-FROM alpine
-
+FROM alpine:3.19
 WORKDIR /app
-
-COPY --from=builder /app/server /app/server
-
-EXPOSE 8080
-
-ENTRYPOINT ["/app/server"] 
+COPY --from=builder /app/crossplane-agent .
+ENTRYPOINT ["./crossplane-agent", "--http", "0.0.0.0:8080"]

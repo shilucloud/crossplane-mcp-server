@@ -22,15 +22,21 @@ var (
 )
 
 func InitClients() error {
-	kubeconfig := os.Getenv("KUBECONFIG")
-	if kubeconfig == "" {
-		kubeconfig = os.Getenv("HOME") + "/.kube/config"
-	}
+	var config *rest.Config
+	var err error
 
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	// try in-cluster first (when running as a pod)
+	config, err = rest.InClusterConfig()
 	if err != nil {
-		fmt.Printf("error building kubeconfig: %v\n", err)
-		os.Exit(1)
+		// fallback to kubeconfig for local dev
+		kubeconfig := os.Getenv("KUBECONFIG")
+		if kubeconfig == "" {
+			kubeconfig = os.Getenv("HOME") + "/.kube/config"
+		}
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			return fmt.Errorf("error building kubeconfig: %w", err)
+		}
 	}
 
 	DynamicClient, err = dynamic.NewForConfig(config)
