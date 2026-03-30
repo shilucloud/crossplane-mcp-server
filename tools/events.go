@@ -10,16 +10,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type EventInfo struct {
-	LastSeenTime time.Time
-	LastSeen     string
-	Type         string // Warning or Normal
-	Reason       string
-	Object       string
-	Message      string
-	Count        int32
-}
-
 func GetEventsByUID(
 	ctx context.Context,
 	clientset kubernetes.Interface,

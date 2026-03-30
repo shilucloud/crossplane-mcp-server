@@ -28,42 +28,6 @@ var (
 	}
 )
 
-// OperationResult holds a one-off operation
-type OperationResult struct {
-	Name           string
-	Phase          string
-	StartTime      string
-	CompletionTime string
-	Duration       string
-	Message        string
-}
-
-// CronOperationResult holds a scheduled operation
-type CronOperationResult struct {
-	Name          string
-	Schedule      string
-	LastRunTime   string
-	LastRunStatus string
-	TotalRuns     int64
-}
-
-// WatchOperationResult holds an event-driven operation
-type WatchOperationResult struct {
-	Name          string
-	WatchingKind  string
-	WatchingName  string
-	LastTriggered string
-	TriggerCount  int64
-	Status        string
-}
-
-// OperationsSummary is the full result returned to the agent
-type OperationsSummary struct {
-	Operations      []OperationResult
-	CronOperations  []CronOperationResult
-	WatchOperations []WatchOperationResult
-}
-
 func ListOperations(ctx context.Context, client dynamic.Interface) (*OperationsSummary, error) {
 	summary := &OperationsSummary{}
 
@@ -127,50 +91,4 @@ func ListOperations(ctx context.Context, client dynamic.Interface) (*OperationsS
 	}
 
 	return summary, nil
-}
-
-func getNestedString(obj map[string]interface{}, fields ...string) string {
-	current := obj
-	for i, field := range fields {
-		val, ok := current[field]
-		if !ok {
-			return "unknown"
-		}
-		if i == len(fields)-1 {
-			str, ok := val.(string)
-			if !ok {
-				return "unknown"
-			}
-			return str
-		}
-		current, ok = val.(map[string]interface{})
-		if !ok {
-			return "unknown"
-		}
-	}
-	return "unknown"
-}
-
-func getNestedInt64(obj map[string]interface{}, fields ...string) int64 {
-	current := obj
-	for i, field := range fields {
-		val, ok := current[field]
-		if !ok {
-			return 0
-		}
-		if i == len(fields)-1 {
-			switch v := val.(type) {
-			case int64:
-				return v
-			case float64:
-				return int64(v)
-			}
-			return 0
-		}
-		current, ok = val.(map[string]interface{})
-		if !ok {
-			return 0
-		}
-	}
-	return 0
 }

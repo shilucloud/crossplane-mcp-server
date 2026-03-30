@@ -9,23 +9,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type CompositionDebugResult struct {
-	Name      string
-	Mode      string
-	ForKind   string
-	Diagnosis Diagnosis
-	Functions []FunctionStatus
-	XRsUsing  []string // XRs currently using this composition
-	Issues    []string
-}
-
-type FunctionStatus struct {
-	Name      string
-	Healthy   bool
-	Installed bool
-	Message   string
-}
-
 func DebugComposition(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,

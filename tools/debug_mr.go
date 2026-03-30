@@ -11,19 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type MRDebugResult struct {
-	Name           string
-	Namespace      string
-	Kind           string
-	Group          string
-	Ready          string
-	Synced         string
-	Diagnosis      Diagnosis
-	Conditions     []Condition
-	Events         []EventInfo
-	ProviderConfig *ProviderConfig
-}
-
 func DebugMR(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,

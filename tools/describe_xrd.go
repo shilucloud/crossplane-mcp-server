@@ -9,29 +9,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type FieldInfo struct {
-	Name        string
-	Type        string
-	Required    bool
-	Default     interface{}
-	Enum        []string
-	Description string
-	Children    []FieldInfo // for nested objects
-}
-
-type XRDDescription struct {
-	Name           string
-	Kind           string
-	Group          string
-	Version        string
-	Scope          string
-	Established    bool
-	RequiredFields []FieldInfo
-	OptionalFields []FieldInfo
-	AllFields      []FieldInfo
-	Summary        string
-}
-
 func DescribeXRD(ctx context.Context, dynamicClient dynamic.Interface, name string) (*XRDDescription, error) {
 	xrd, err := dynamicClient.Resource(XRDGVR).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {

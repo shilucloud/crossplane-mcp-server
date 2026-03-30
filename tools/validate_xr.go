@@ -10,27 +10,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type FieldConflict struct {
-	XRField            string
-	XRValue            string
-	CompositionField   string
-	CompositionDefault string
-	PatchType          string
-	ConflictType       string // "override", "invalid_region", "enum_violation", "type_mismatch"
-	Warning            string
-}
-
-type ValidationResult struct {
-	XRName        string
-	XRNamespace   string
-	Composition   string
-	Valid         bool
-	Conflicts     []FieldConflict
-	MissingFields []string
-	Warnings      []string
-	Summary       string
-}
-
 func ValidateXR(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,

@@ -9,27 +9,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type XRObjectInfo struct {
-	Group    string
-	Version  string
-	Resource string // plural name
-	Kind     string
-	Scope    string // Namespaced or Cluster
-}
-
-type XRInfo struct {
-	Name           string
-	Namespace      string
-	Kind           string
-	Ready          string
-	Synced         string
-	Message        string
-	Age            string
-	CompositionRef string
-	Scope          string
-	Group          string
-}
-
 var (
 	XRDGVR = schema.GroupVersionResource{
 		Group:    "apiextensions.crossplane.io",
@@ -144,56 +123,4 @@ func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, er
 	}
 
 	return result, nil
-}
-
-func getServedVersion(obj map[string]interface{}) string {
-	versions, ok := obj["spec"].(map[string]interface{})["versions"].([]interface{})
-	if !ok {
-		return ""
-	}
-	for _, v := range versions {
-		ver, ok := v.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		served, _ := ver["served"].(bool)
-		if served {
-			name, _ := ver["name"].(string)
-			return name
-		}
-	}
-	return ""
-}
-
-func resolveConditionStatus(obj map[string]interface{}, condType string) string {
-	status, ok := obj["status"].(map[string]interface{})
-	if !ok {
-		return "Unknown"
-	}
-	conditions, ok := status["conditions"].([]interface{})
-	if !ok {
-		return "Unknown"
-	}
-	for _, c := range conditions {
-		condition, ok := c.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if condition["type"] == condType {
-			s, _ := condition["status"].(string)
-			msg, _ := condition["message"].(string)
-			if msg != "" && s == "False" {
-				return fmt.Sprintf("False (%s)", truncate(msg, 60))
-			}
-			return s
-		}
-	}
-	return "Unknown"
-}
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max] + "..."
 }

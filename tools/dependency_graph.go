@@ -20,14 +20,6 @@ const (
 	NodeMissing   NodeStatus = "✗"
 )
 
-type DependencyNode struct {
-	Name     string
-	Kind     string
-	Status   NodeStatus
-	Message  string
-	Children []*DependencyNode
-}
-
 func BuildDependencyGraph(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,

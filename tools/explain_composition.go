@@ -9,65 +9,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type TransformInfo struct {
-	Type    string
-	Map     map[string]interface{}
-	Convert string
-	Math    map[string]interface{}
-}
-
-type CombineVariable struct {
-	FromFieldPath string
-}
-
-type CombineInfo struct {
-	Strategy  string
-	Format    string
-	Variables []CombineVariable
-}
-
-type PatchInfo struct {
-	Type          string
-	FromFieldPath string
-	ToFieldPath   string
-	PatchSetName  string
-	Policy        string
-	Transforms    []TransformInfo
-	Combine       *CombineInfo
-}
-
-type PatchSet struct {
-	Name    string
-	Patches []PatchInfo
-}
-
-type ResourceBlockInfo struct {
-	Name           string
-	APIVersion     string
-	Kind           string
-	ProviderConfig string
-	DefaultValues  map[string]string
-	Patches        []PatchInfo
-}
-
-type PipelineStep struct {
-	StepName     string
-	FunctionName string
-	Resources    []ResourceBlockInfo
-	PatchSets    []PatchSet
-}
-
-type CompositionExplanation struct {
-	Name           string
-	Mode           string
-	ForKind        string
-	ForAPIVersion  string
-	Pipeline       []PipelineStep
-	Summary        string
-	TotalResources int
-	TotalFunctions int
-}
-
 func ExplainComposition(ctx context.Context, dynamicClient dynamic.Interface, name string) (*CompositionExplanation, error) {
 	comp, err := dynamicClient.Resource(compositionGVR).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {

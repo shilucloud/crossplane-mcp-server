@@ -10,18 +10,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type ProviderConfig struct {
-	Name                string
-	Users               int64
-	CredentialType      string
-	SecretName          string
-	CredentialNamespace string
-	SecretExists        bool
-	Ready               string
-	Synced              string
-	Conditions          []Condition
-}
-
 func CheckProviderConfig(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,

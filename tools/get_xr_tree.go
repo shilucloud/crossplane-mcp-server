@@ -2,37 +2,12 @@ package tools
 
 import (
 	"context"
-	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
-
-type MRTreeInfo struct {
-	UID                string
-	Name               string
-	Kind               string
-	Group              string
-	Version            string
-	Ready              string
-	Synced             string
-	ProviderConfigInfo ProviderConfigInfo
-	ProviderConfigName string
-}
-
-type XRTreeInfo struct {
-	UID             string
-	XRName          string
-	XRNamespace     string
-	XRReady         string
-	XRSynced        string
-	XRKind          string
-	XRFields        map[string]any
-	CompositionInfo CompositionInfo
-	MRs             []MRTreeInfo
-}
 
 var (
 	compositionGVR = schema.GroupVersionResource{
@@ -160,46 +135,4 @@ func GetXRTree(ctx context.Context, dynamicClient dynamic.Interface, group, vers
 	}
 
 	return result, nil
-}
-
-func splitAPIVersion(apiVersion string) (string, string) {
-	parts := strings.SplitN(apiVersion, "/", 2)
-	if len(parts) == 2 {
-		return parts[0], parts[1]
-	}
-	return apiVersion, ""
-}
-
-func kindToPlural(kind string) string {
-	return strings.ToLower(kind) + "s"
-}
-
-func getNestedSlice(obj map[string]interface{}, fields ...string) []interface{} {
-	current := obj
-	for i, field := range fields {
-		val, ok := current[field]
-		if !ok {
-			return nil
-		}
-		if i == len(fields)-1 {
-			slice, ok := val.([]interface{})
-			if !ok {
-				return nil
-			}
-			return slice
-		}
-		current, ok = val.(map[string]interface{})
-		if !ok {
-			return nil
-		}
-	}
-	return nil
-}
-
-func mrGroupToProviderConfigGroup(mrGroup string) string {
-	parts := strings.SplitN(mrGroup, ".", 2)
-	if len(parts) == 2 {
-		return parts[1]
-	}
-	return mrGroup
 }

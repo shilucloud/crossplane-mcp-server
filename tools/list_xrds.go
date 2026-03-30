@@ -9,24 +9,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type XRDInfo struct {
-	Name         string
-	Kind         string
-	Group        string
-	Version      string
-	Scope        string
-	Established  bool
-	XRCount      int      // how many XRs exist for this XRD
-	Compositions []string // compositions that serve this XRD
-}
-
-type XRDList struct {
-	Total      int
-	Namespaced int
-	Cluster    int
-	XRDs       []XRDInfo
-}
-
 func ListXRDs(ctx context.Context, dynamicClient dynamic.Interface) (*XRDList, error) {
 	result := &XRDList{}
 

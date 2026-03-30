@@ -10,18 +10,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type ProviderDebugResult struct {
-	ProviderName    string
-	Healthy         bool
-	Installed       bool
-	State           string
-	Diagnosis       Diagnosis
-	Conditions      []Condition
-	Events          []EventInfo
-	ProviderConfigs []ProviderConfigHealth
-	AffectedMRs     int
-}
-
 func DebugProvider(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,

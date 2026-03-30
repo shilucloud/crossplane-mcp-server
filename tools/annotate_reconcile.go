@@ -12,14 +12,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type ReconcileResult struct {
-	Name      string
-	Namespace string
-	Kind      string
-	Triggered bool
-	Message   string
-}
-
 func AnnotateReconcile(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,

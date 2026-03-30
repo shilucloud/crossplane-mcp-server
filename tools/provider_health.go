@@ -14,34 +14,6 @@ var (
 	providerConfigKind = "ProviderConfig"
 )
 
-type ProviderHealth struct {
-	ProviderName    string
-	Healthy         bool
-	Installed       bool
-	State           string
-	Version         string
-	Package         string
-	HealthyMRs      int
-	UnhealthyMRs    int
-	ProviderConfigs []ProviderConfigHealth
-	Conditions      []Condition
-}
-
-type ProviderConfigHealth struct {
-	Name      string
-	Namespace string
-	Ready     string
-	Synced    string
-	SecretRef string
-}
-
-type ProviderHealthSummary struct {
-	TotalProviders     int
-	HealthyProviders   int
-	UnhealthyProviders int
-	Providers          []ProviderHealth
-}
-
 // Discover ALL ProviderConfig GVRs
 func FindProviderConfigGVRs(discoveryClient discovery.DiscoveryInterface) ([]schema.GroupVersionResource, error) {
 	var result []schema.GroupVersionResource
@@ -95,16 +67,6 @@ func BuildProviderGroupMap(ctx context.Context, dynamicClient dynamic.Interface)
 	}
 
 	return result, nil
-}
-
-// Helper
-func contains(list []string, item string) bool {
-	for _, v := range list {
-		if v == item {
-			return true
-		}
-	}
-	return false
 }
 
 // MAIN FUNCTION

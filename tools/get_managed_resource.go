@@ -22,35 +22,6 @@ var (
 	}
 )
 
-type ManagedResourceInfo struct {
-	UID       string
-	Name      string
-	Namespace string
-	Kind      string
-	Group     string
-	Ready     string
-	Synced    string
-	Age       string
-	Provider  string
-}
-
-type ManagedResourceDetail struct {
-	ManagedResourceInfo
-	Spec         map[string]interface{}
-	Status       map[string]interface{}
-	Conditions   []ConditionInfo
-	Annotations  map[string]string
-	CompositeRef string // which XR owns this MR
-}
-
-type ConditionInfo struct {
-	Type    string
-	Status  string
-	Reason  string
-	Message string
-	Age     string
-}
-
 // ListManagedResources lists all MRs that have actual instances
 func ListManagedResources(ctx context.Context, client dynamic.Interface) ([]ManagedResourceInfo, error) {
 	result := []ManagedResourceInfo{}

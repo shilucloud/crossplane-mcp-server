@@ -28,39 +28,6 @@ var (
 	}
 )
 
-type CrossplaneInfo struct {
-	// In crossplane v2 claims are removed, and XR's made namespaced, to
-	// remove another layer of abstraction.
-	// core version
-	Version      string // e.g. "v2.0.1"
-	MajorVersion int    // 1 or 2
-
-	// feature flags based on version
-	HasMRDs          bool // v2 only
-	HasOperations    bool // v2 only
-	HasNamespacedXRs bool // v2 only
-	HasNamespacedMRs bool // v2 only
-
-	// XRD summary
-	TotalXRDs      int
-	NamespacedXRDs int
-	ClusterXRDs    int
-
-	// total provider
-	NumberOfProvider int
-
-	// provider summary
-	Providers []ProviderInfo
-}
-
-type ProviderInfo struct {
-	Name      string
-	Version   string
-	Health    bool
-	Installed bool
-	State     string // Healthy, Unhealthy, Installing, Unknown
-}
-
 func GetCrossplaneInfo(ctx context.Context, dynamicClient dynamic.Interface, clientset kubernetes.Interface) (*CrossplaneInfo, error) {
 	result := &CrossplaneInfo{}
 
@@ -124,48 +91,4 @@ func GetCrossplaneInfo(ctx context.Context, dynamicClient dynamic.Interface, cli
 	result.NumberOfProvider = len(providers.Items)
 
 	return result, nil
-}
-
-func resolveProviderState(obj map[string]interface{}) string {
-	conditions, ok := obj["status"].(map[string]interface{})["conditions"].([]interface{})
-	if !ok {
-		return "Unknown"
-	}
-	for _, c := range conditions {
-		condition, ok := c.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if condition["type"] == "Healthy" && condition["status"] == "True" {
-			return "Healthy"
-		}
-		if condition["type"] == "Healthy" && condition["status"] == "False" {
-			return "Unhealthy"
-		}
-	}
-	return "Installing"
-}
-
-func extractImageTag(image string) string {
-	for i := len(image) - 1; i >= 0; i-- {
-		if image[i] == ':' {
-			return image[i+1:]
-		}
-	}
-	return "unknown"
-}
-
-func extractMajorVersion(version string) int {
-	// e.g. "v2.0.1" -> 2, "v1.20.0" -> 1
-	if len(version) < 2 {
-		return 0
-	}
-	v := version
-	if v[0] == 'v' {
-		v = v[1:]
-	}
-	if len(v) > 0 && v[0] == '2' {
-		return 2
-	}
-	return 1
 }

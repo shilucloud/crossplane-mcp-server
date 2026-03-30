@@ -9,15 +9,6 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-type Condition struct {
-	Type               string
-	Status             string
-	Reason             string
-	Message            string
-	LastTransitionTime string
-	ObservedGeneration int64
-}
-
 func GetConditions(ctx context.Context, client dynamic.Interface, group string, version string, resource string, name string, namespace string) ([]Condition, error) {
 	gvr := schema.GroupVersionResource{
 		Group:    group,

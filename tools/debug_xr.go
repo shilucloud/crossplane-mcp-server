@@ -29,24 +29,6 @@ var (
 	}
 )
 
-type Diagnosis struct {
-	RootCause    string
-	Severity     string
-	AffectedPath string
-	SuggestedFix string
-	Details      []string
-}
-
-type DebugResult struct {
-	XRName      string
-	XRNamespace string
-	XRReady     string
-	XRSynced    string
-	Diagnosis   Diagnosis
-	Tree        *XRTreeInfo
-	Events      []EventInfo
-}
-
 func DebugXR(ctx context.Context, dynamicClient dynamic.Interface, clientset kubernetes.Interface, group, version, resource, name, namespace string) (*DebugResult, error) {
 	var allEvents []EventInfo
 
@@ -459,16 +441,6 @@ func checkUsagesBlocking(ctx context.Context, dynamicClient dynamic.Interface, n
 		}
 	}
 	return nil
-}
-
-func extractFunctionName(message string) string {
-	if idx := strings.Index(message, "\""); idx != -1 {
-		end := strings.Index(message[idx+1:], "\"")
-		if end != -1 {
-			return message[idx+1 : idx+1+end]
-		}
-	}
-	return "unknown"
 }
 
 func analyzeMRError(mr MRTreeInfo) (string, string) {
