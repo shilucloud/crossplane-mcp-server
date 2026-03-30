@@ -15,33 +15,33 @@ func AddToolsToServer(server *mcp.Server) {
 
 var toolsToAdd []func(server *mcp.Server)
 
-func registerTool[I, O any](tool MCPTool[I, O]) {
+// registerTool registers a typed tool using the v1.4.1 mcp.AddTool API.
+// The handler signature expected by mcp.AddTool is:
+//
+//	func(ctx context.Context, req *mcp.CallToolRequest, input I) (*mcp.CallToolResult, O, error)
+func registerTool[I any](name, description string, fn func(ctx context.Context, input I) (any, error)) {
 	toolsToAdd = append(toolsToAdd, func(server *mcp.Server) {
-		mcp.AddTool(server, &mcp.Tool{Name: tool.Name, Description: tool.Description}, tool.Handler)
+		mcp.AddTool(server, &mcp.Tool{
+			Name:        name,
+			Description: description,
+		}, func(ctx context.Context, req *mcp.CallToolRequest, input I) (*mcp.CallToolResult, any, error) {
+			result, err := fn(ctx, input)
+			if err != nil {
+				return &mcp.CallToolResult{
+					Content: []mcp.Content{&mcp.TextContent{Text: "error: " + err.Error()}},
+					IsError: true,
+				}, nil, nil
+			}
+			out, jsonErr := json.MarshalIndent(result, "", "  ")
+			if jsonErr != nil {
+				return &mcp.CallToolResult{
+					Content: []mcp.Content{&mcp.TextContent{Text: "error marshaling result: " + jsonErr.Error()}},
+					IsError: true,
+				}, nil, nil
+			}
+			return &mcp.CallToolResult{
+				Content: []mcp.Content{&mcp.TextContent{Text: string(out)}},
+			}, nil, nil
+		})
 	})
-}
-
-type MCPTool[I, O any] struct {
-	Name        string
-	Description string
-	Handler     func(ctx context.Context, cc *mcp.ServerSession, params *mcp.CallToolParamsFor[I]) (*mcp.CallToolResultFor[O], error)
-}
-
-// add these at the bottom of all_tools.go
-
-func mcpResult(v interface{}) (*mcp.CallToolResultFor[any], error) {
-	out, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return mcpError(err.Error()), nil
-	}
-	return &mcp.CallToolResultFor[any]{
-		Content: []mcp.Content{&mcp.TextContent{Text: string(out)}},
-	}, nil
-}
-
-func mcpError(msg string) *mcp.CallToolResultFor[any] {
-	return &mcp.CallToolResultFor[any]{
-		Content: []mcp.Content{&mcp.TextContent{Text: "error: " + msg}},
-		IsError: true,
-	}
 }
