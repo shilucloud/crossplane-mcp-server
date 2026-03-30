@@ -229,34 +229,3 @@ func GetManagedResource(ctx context.Context, client dynamic.Interface, group str
 		CompositeRef: getNestedString(obj, "metadata", "annotations", "crossplane.io/composite"),
 	}, nil
 }
-
-// getLatestNonDeprecatedVersion returns the newest non-deprecated served version
-func getLatestNonDeprecatedVersion(obj map[string]interface{}) string {
-	versions, ok := obj["spec"].(map[string]interface{})["versions"].([]interface{})
-	if !ok {
-		return ""
-	}
-	latest := ""
-	for _, v := range versions {
-		ver, ok := v.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		served, _ := ver["served"].(bool)
-		deprecated, _ := ver["deprecated"].(bool)
-		if served && !deprecated {
-			name, _ := ver["name"].(string)
-			latest = name // last one wins — versions are ordered newest last
-		}
-	}
-	return latest
-}
-
-func getString(obj map[string]interface{}, key string) string {
-	v, ok := obj[key]
-	if !ok {
-		return ""
-	}
-	s, _ := v.(string)
-	return s
-}

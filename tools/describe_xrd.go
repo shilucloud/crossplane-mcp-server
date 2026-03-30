@@ -162,30 +162,3 @@ func buildXRDSummary(x *XRDDescription) string {
 
 	return sb.String()
 }
-
-// helpers
-func getNestedMap(obj map[string]interface{}, fields ...string) map[string]interface{} {
-	current := obj
-	for _, field := range fields {
-		next, ok := current[field].(map[string]interface{})
-		if !ok {
-			return nil
-		}
-		current = next
-	}
-	return current
-}
-
-func getStringSlice(obj map[string]interface{}, key string) []string {
-	raw, ok := obj[key].([]interface{})
-	if !ok {
-		return nil
-	}
-	var result []string
-	for _, v := range raw {
-		if s, ok := v.(string); ok {
-			result = append(result, s)
-		}
-	}
-	return result
-}

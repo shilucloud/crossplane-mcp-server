@@ -16,7 +16,7 @@ spec:
       serviceAccountName: crossplane-agent  
       containers:
         - name: crossplane-agent
-          image: shilucloud/crossplane-agent:0.0.2
+          image: shilucloud/crossplane-agent:0.0.3
           ports:
             - containerPort: 8080
           args: ["--http", "0.0.0.0:8080"]
