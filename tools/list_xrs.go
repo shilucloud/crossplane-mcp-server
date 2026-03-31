@@ -100,7 +100,7 @@ func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, er
 					Ready:          resolveConditionStatus(obj, "Ready"),
 					Synced:         resolveConditionStatus(obj, "Synced"),
 					Age:            getNestedString(obj, "metadata", "creationTimestamp"),
-					CompositionRef: getNestedString(obj, "spec", "compositionRef", "name"),
+					CompositionRef: getNestedString(obj, "spec", "crossplane", "compositionRef", "name"),
 					Scope:          "Namespaced",
 					Group:          xrObject.Group,
 				}

@@ -28,6 +28,19 @@ type ResourceInfo struct {
 	ResourceProvider ResourceProviderInfo
 }
 
+// used in composition tool (list)
+type PipelineResourceInfo struct {
+	Name string
+	Kind string
+}
+
+// used in composition tool (list)
+type PipelineInfo struct {
+	StepName     string
+	FunctionName string
+	Resources    []PipelineResourceInfo
+}
+
 // used in both get_xr_tree and composition tools
 type CompositionInfo struct {
 	Name     string
@@ -35,6 +48,8 @@ type CompositionInfo struct {
 	Pipeline []interface{}
 
 	ResourceProviderList []ResourceInfo
+
+	PipelineInfo []PipelineInfo
 }
 
 // used in annotate_reconcile
@@ -100,7 +115,7 @@ type ProviderInfo struct {
 	Version   string
 	Health    bool
 	Installed bool
-	State     string // Healthy, Unhealthy, Installing, Unknown
+	State     string
 }
 
 // debug_composition

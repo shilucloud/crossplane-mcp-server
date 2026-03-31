@@ -3,6 +3,7 @@ package tools
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -15,34 +16,54 @@ func ListProviders(ctx context.Context, dynamicClient dynamic.Interface) ([]Prov
 	if err != nil {
 		return nil, fmt.Errorf("error listing providers: %w", err)
 	}
+
 	for _, p := range providers.Items {
-		state := resolveProviderState(p.Object)
-		version := getNestedString(p.Object, "status", "package")
+
+		pkg := getNestedString(p.Object, "spec", "package")
+		version := extractVersion(pkg)
+
+		installed, healthy := extractProviderConditions(p.Object)
+
 		result = append(result, ProviderInfo{
 			Name:      p.GetName(),
 			Version:   version,
-			State:     state,
-			Installed: true,
+			Installed: installed,
+			Health:    healthy,
+			State:     resolveProviderState(p.Object),
 		})
 	}
 
 	return result, nil
 }
 
-func CheckAllProviderHealth(ctx context.Context, dynamicClient dynamic.Interface) ([]ProviderHealth, error) {
-	result := []ProviderHealth{}
+func extractProviderConditions(obj map[string]interface{}) (installed bool, healthy bool) {
+	conditions := getNestedSlice(obj, "status", "conditions")
 
-	providers, err := dynamicClient.Resource(providerGVR).List(ctx, metav1.ListOptions{})
+	for _, c := range conditions {
+		cond, ok := c.(map[string]interface{})
+		if !ok {
+			continue
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("Error listing provider: %w", err)
+		condType := getNestedString(cond, "type")
+		status := getNestedString(cond, "status")
+
+		if condType == "Installed" {
+			installed = (status == "True")
+		}
+
+		if condType == "Healthy" {
+			healthy = (status == "True")
+		}
 	}
 
-	for _, p := range providers.Items {
-		//state := resolveProviderState(p.Object)
-		result = append(result, ProviderHealth{
-			ProviderName: p.GetName(),
-		})
+	return
+}
+
+func extractVersion(pkg string) string {
+	parts := strings.Split(pkg, ":")
+	if len(parts) == 2 {
+		return parts[1]
 	}
-	return result, nil
+	return pkg
 }
