@@ -1,0 +1,12 @@
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: groq-llama
+  namespace: kagent
+spec:
+  provider: OpenAI
+  model: llama-3.3-70b-versatile
+  apiKeySecret: groq-credential
+  apiKeySecretKey: OPENAI_API_KEY
+  openAI:
+    baseUrl: https://api.groq.com/openai/v1

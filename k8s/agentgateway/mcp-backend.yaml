@@ -1,0 +1,14 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: crossplane-mcp-backend
+  namespace: agentgateway
+spec:
+  mcp:
+    targets:
+      - name: crossplane-mcp
+        static:
+          host: crossplane-agent.default.svc.cluster.local
+          port: 8080
+          protocol: StreamableHTTP
+ 

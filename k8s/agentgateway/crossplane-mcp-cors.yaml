@@ -1,0 +1,25 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: crossplane-mcp-cors
+  namespace: agentgateway       
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: crossplane-mcp
+  traffic:
+    cors:
+      allowOrigins:
+        - "*"
+      allowMethods:
+        - GET
+        - POST
+        - DELETE
+        - OPTIONS
+      allowHeaders:
+        - "*"
+      exposeHeaders:
+        - Mcp-Session-Id
+      maxAge: 86400
+
