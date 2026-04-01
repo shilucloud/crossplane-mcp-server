@@ -93,16 +93,14 @@ func ValidateXR(
 
 	// Step 4.5: validate each XR parameter value against XRD schema
 	xrParams := getNestedMap(xrObj, "spec", "parameters")
-	if xrParams != nil {
-		for paramName, paramVal := range xrParams {
-			paramStr := fmt.Sprintf("%v", paramVal)
-			fieldConflicts := validateFieldAgainstSchema(
-				paramName, paramStr, xrdName, ctx, dynamicClient)
-			for _, fc := range fieldConflicts {
-				result.Conflicts = append(result.Conflicts, fc)
-				if fc.ConflictType == "enum_violation" || fc.ConflictType == "type_mismatch" {
-					result.Valid = false
-				}
+	for paramName, paramVal := range xrParams {
+		paramStr := fmt.Sprintf("%v", paramVal)
+		fieldConflicts := validateFieldAgainstSchema(
+			paramName, paramStr, xrdName, ctx, dynamicClient)
+		for _, fc := range fieldConflicts {
+			result.Conflicts = append(result.Conflicts, fc)
+			if fc.ConflictType == "enum_violation" || fc.ConflictType == "type_mismatch" {
+				result.Valid = false
 			}
 		}
 	}

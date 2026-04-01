@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shilucloud/crossplane-agent/internal/logging"
 	"github.com/shilucloud/crossplane-agent/internal/tools"
 )
@@ -43,13 +46,69 @@ func run() error {
 
 	// start server
 	if *httpAddr != "" {
-		handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
+		mux := http.NewServeMux()
+		mux.Handle("/health", healthHandler())
+		mux.Handle("/ready", readyHandler())
+		mux.Handle("/metrics", promhttp.Handler())
+
+		mcpHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
 			return server
 		}, nil)
-		logging.Info("MCP server listening", "address", *httpAddr)
-		return http.ListenAndServe(*httpAddr, handler)
+		mux.Handle("/mcp", mcpHandler)
+
+		srv := &http.Server{
+			Addr:    *httpAddr,
+			Handler: mux,
+		}
+
+		go func() {
+			logging.Info("MCP server listening", "address", *httpAddr)
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logging.Error("HTTP server error", "error", err.Error())
+			}
+		}()
+
+		return gracefulShutdown(srv)
 	}
 
 	return server.Run(context.Background(), &mcp.StdioTransport{})
+}
 
+func healthHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"healthy"}`))
+	})
+}
+
+func readyHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if tools.IsReady() {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status":"ready"}`))
+		} else {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"status":"not ready"}`))
+		}
+	})
+}
+
+func gracefulShutdown(srv *http.Server) error {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	logging.Info("shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		return fmt.Errorf("server forced to shutdown: %w", err)
+	}
+
+	logging.Info("server exited gracefully")
+	return nil
 }

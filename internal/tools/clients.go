@@ -20,7 +20,12 @@ var (
 	Clientset       kubernetes.Interface
 	DiscoveryClient discovery.DiscoveryInterface
 	RestMapper      meta.RESTMapper
+	ready           bool
 )
+
+func IsReady() bool {
+	return ready
+}
 
 func InitClients() error {
 	var config *rest.Config
@@ -68,6 +73,7 @@ func InitClients() error {
 	logging.Info("discovery client initialized")
 
 	logging.Info("all kubernetes clients initialized successfully")
+	ready = true
 	return nil
 }
 
