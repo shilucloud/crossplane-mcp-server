@@ -118,14 +118,15 @@ func BuildDependencyGraph(
 			}
 
 			// if no conditions, check if it exists — existence = healthy enough
-			if mr.ProviderConfigInfo.Ready == "" || mr.ProviderConfigInfo.Ready == "Unknown" {
+			switch mr.ProviderConfigInfo.Ready {
+			case "", "Unknown":
 				// ProviderConfig exists (we have the name) but has no conditions
 				// treat as healthy if secret exists
 				pcNode.Status = NodeHealthy
 				pcNode.Message = fmt.Sprintf("users: %d", 1) // users field
-			} else if mr.ProviderConfigInfo.Ready == "True" {
+			case "True":
 				pcNode.Status = NodeHealthy
-			} else {
+			default:
 				pcNode.Status = NodeUnhealthy
 				pcNode.Message = mr.ProviderConfigInfo.Ready
 			}
@@ -163,17 +164,17 @@ func PrintDependencyGraph(node *DependencyNode, prefix string, isLast bool) stri
 
 	if prefix == "" {
 		// root node
-		sb.WriteString(fmt.Sprintf("%s %s [%s]", node.Status, node.Name, node.Kind))
+		fmt.Fprintf(&sb, "%s %s [%s]", node.Status, node.Name, node.Kind)
 	} else {
 		connector := "├── "
 		if isLast {
 			connector = "└── "
 		}
-		sb.WriteString(fmt.Sprintf("%s%s%s %s [%s]", prefix, connector, node.Status, node.Name, node.Kind))
+		fmt.Fprintf(&sb, "%s%s%s %s [%s]", prefix, connector, node.Status, node.Name, node.Kind)
 	}
 
 	if node.Message != "" {
-		sb.WriteString(fmt.Sprintf(" — %s", node.Message))
+		fmt.Fprintf(&sb, " — %s", node.Message)
 	}
 	sb.WriteString("\n")
 
