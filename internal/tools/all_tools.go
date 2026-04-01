@@ -3,8 +3,10 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/shilucloud/crossplane-agent/internal/logging"
 )
 
 func AddToolsToServer(server *mcp.Server) {
@@ -25,8 +27,14 @@ func registerTool[I any](name, description string, fn func(ctx context.Context, 
 			Name:        name,
 			Description: description,
 		}, func(ctx context.Context, req *mcp.CallToolRequest, input I) (*mcp.CallToolResult, any, error) {
+			start := time.Now()
+			logging.Info("tool called", "tool", name)
+
 			result, err := fn(ctx, input)
+			duration := time.Since(start)
+
 			if err != nil {
+				logging.Error("tool failed", "tool", name, "error", err.Error(), "duration_ms", duration.Milliseconds())
 				return &mcp.CallToolResult{
 					Content: []mcp.Content{&mcp.TextContent{Text: "error: " + err.Error()}},
 					IsError: true,
@@ -34,11 +42,13 @@ func registerTool[I any](name, description string, fn func(ctx context.Context, 
 			}
 			out, jsonErr := json.MarshalIndent(result, "", "  ")
 			if jsonErr != nil {
+				logging.Error("tool result marshaling failed", "tool", name, "error", jsonErr.Error(), "duration_ms", duration.Milliseconds())
 				return &mcp.CallToolResult{
 					Content: []mcp.Content{&mcp.TextContent{Text: "error marshaling result: " + jsonErr.Error()}},
 					IsError: true,
 				}, nil, nil
 			}
+			logging.Info("tool completed", "tool", name, "duration_ms", duration.Milliseconds())
 			return &mcp.CallToolResult{
 				Content: []mcp.Content{&mcp.TextContent{Text: string(out)}},
 			}, nil, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/shilucloud/crossplane-agent/internal/logging"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -47,13 +48,16 @@ func GetXRInfo(ctx context.Context, dynamicClient dynamic.Interface) ([]XRObject
 
 	return result, nil
 }
-func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, error) {
+func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) (*XRListResult, error) {
 	result := []XRInfo{}
+	warnings := []string{}
 
 	xrObjects, err := GetXRInfo(ctx, dynamicClient)
 	if err != nil {
 		return nil, err
 	}
+
+	logging.Info("listing composite resources", "count", len(xrObjects))
 
 	for _, xrObject := range xrObjects {
 		xrGVR := schema.GroupVersionResource{
@@ -67,7 +71,9 @@ func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, er
 		if xrObject.Scope == "Namespaced" {
 			list, err := dynamicClient.Resource(xrGVR).Namespace(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
 			if err != nil {
-				fmt.Printf("warning: could not list %s: %v\n", xrObject.Resource, err)
+				warning := fmt.Sprintf("could not list %s: %v", xrObject.Resource, err)
+				warnings = append(warnings, warning)
+				logging.Warn("failed to list namespaced resources", "resource", xrObject.Resource, "error", err.Error())
 				continue
 			}
 			for _, item := range list.Items {
@@ -76,7 +82,9 @@ func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, er
 		} else {
 			list, err := dynamicClient.Resource(xrGVR).List(ctx, metav1.ListOptions{})
 			if err != nil {
-				fmt.Printf("warning: could not list %s: %v\n", xrObject.Resource, err)
+				warning := fmt.Sprintf("could not list %s: %v", xrObject.Resource, err)
+				warnings = append(warnings, warning)
+				logging.Warn("failed to list cluster-scoped resources", "resource", xrObject.Resource, "error", err.Error())
 				continue
 			}
 			for _, item := range list.Items {
@@ -122,5 +130,6 @@ func ListXrs(ctx context.Context, dynamicClient dynamic.Interface) ([]XRInfo, er
 		}
 	}
 
-	return result, nil
+	logging.Info("completed listing composite resources", "total_xrs", len(result), "warnings", len(warnings))
+	return &XRListResult{XRs: result, Warnings: warnings}, nil
 }

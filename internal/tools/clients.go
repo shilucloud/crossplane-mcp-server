@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/shilucloud/crossplane-agent/internal/logging"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
@@ -25,9 +26,12 @@ func InitClients() error {
 	var config *rest.Config
 	var err error
 
+	logging.Info("initializing kubernetes clients")
+
 	// try in-cluster first (when running as a pod)
 	config, err = rest.InClusterConfig()
 	if err != nil {
+		logging.Info("not running in-cluster, trying kubeconfig")
 		// fallback to kubeconfig for local dev
 		kubeconfig := os.Getenv("KUBECONFIG")
 		if kubeconfig == "" {
@@ -43,22 +47,27 @@ func InitClients() error {
 	if err != nil {
 		return err
 	}
+	logging.Info("dynamic client initialized")
 
 	Clientset, err = kubernetes.NewForConfig(config)
 	if err != nil {
 		return err
 	}
+	logging.Info("kubernetes clientset initialized")
 
 	RestMapper, err = NewRESTMapper(config)
 	if err != nil {
 		return err
 	}
+	logging.Info("REST mapper initialized")
 
 	DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
 		return err
 	}
+	logging.Info("discovery client initialized")
 
+	logging.Info("all kubernetes clients initialized successfully")
 	return nil
 }
 

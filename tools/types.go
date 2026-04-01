@@ -386,6 +386,11 @@ type XRInfo struct {
 	Group          string
 }
 
+type XRListResult struct {
+	XRs      []XRInfo
+	Warnings []string
+}
+
 // operations
 
 // OperationResult holds a one-off operation

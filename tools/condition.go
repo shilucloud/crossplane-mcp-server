@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/shilucloud/crossplane-agent/internal/logging"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -18,8 +19,8 @@ func GetConditions(ctx context.Context, client dynamic.Interface, group string, 
 
 	// fetch the resource
 	var obj map[string]interface{}
+	logging.Info("getting resource conditions", "group", group, "version", version, "resource", resource, "name", name, "namespace", namespace)
 	if namespace != "" {
-		fmt.Println("--in--")
 		o, err := client.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("error getting resource: %w", err)
