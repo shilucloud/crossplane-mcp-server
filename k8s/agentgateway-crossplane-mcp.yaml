@@ -1,9 +1,0 @@
-apiVersion: kagent.dev/v1alpha2
-kind: RemoteMCPServer
-metadata:
-  name: crossplane-mcp-agentgateway
-  namespace: kagent
-spec:
-  description: "Crossplane debugging tools via agentgateway"
-  protocol: STREAMABLE_HTTP
-  url: http://agentgateway-proxy.agentgateway.svc.cluster.local:80/mcp
