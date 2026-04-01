@@ -1,0 +1,128 @@
+version: '3'
+
+output: prefixed
+
+env:
+  BINARY_NAME: crossplane-mcp-server
+  CMD_DIR: ./cmd/server
+  BUILD_DIR: ./bin
+  REPO_NAME: crossplane-mcp-server
+  HUB_USERNAME: shilcloud
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  build:
+    desc: Build the binary
+    cmds:
+      - mkdir -p ./bin
+      - go build -ldflags "-s -w" -o ./bin/{{.BINARY_NAME}} {{.CMD_DIR}}/main.go
+    sources:
+      - ./cmd/**/*.go
+      - ./internal/**/*.go
+      - ./tools/**/*.go
+    generates:
+      - ./bin/{{.BINARY_NAME}}
+
+  build:linux:
+    desc: Build for Linux (container builds)
+    cmds:
+      - mkdir -p ./bin
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o ./bin/{{.BINARY_NAME}}-linux-amd64 {{.CMD_DIR}}/main.go
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./... -v
+
+  test:coverage:
+    desc: Run tests with coverage
+    cmds:
+      - go test ./... -v -coverprofile=coverage.out
+      - go tool cover -html=coverage.out -o coverage.html
+
+  test:junit:
+    desc: Run tests with JUnit output (for CI)
+    cmds:
+      - gotestsum --format standard-verbose --outfile test-results.xml ./...
+
+  fmt:
+    desc: Format code
+    cmds:
+      - go fmt ./...
+
+  vet:
+    desc: Vet code
+    cmds:
+      - go vet ./...
+
+  lint:
+    desc: Lint code
+    cmds:
+      - /home/shilash/go/bin/golangci-lint run ./...
+
+  lint:fix:
+    desc: Lint and fix code
+    cmds:
+      - /home/shilash/go/bin/golangci-lint run ./... --fix
+
+  tidy:
+    desc: Tidy dependencies
+    cmds:
+      - go mod tidy
+
+  deps:
+    desc: Verify dependencies
+    cmds:
+      - go mod verify
+
+  run:
+    desc: Run server locally (stdio mode)
+    cmds:
+      - go run {{.CMD_DIR}}/main.go --log-level=debug
+
+  run:http:
+    desc: Run server in HTTP mode
+    cmds:
+      - go run {{.CMD_DIR}}/main.go --http=:8001 --log-level=debug
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf ./bin
+      - rm -f coverage.out coverage.html test-results.xml
+
+  ci:
+    desc: Full CI pipeline
+    cmds:
+      - go mod tidy
+      - go fmt ./...
+      - go vet ./...
+      - go test ./... -v
+      - /home/shilash/go/bin/golangci-lint run ./...
+
+  docker:build:
+    desc: Build Docker image
+    vars:
+      TAG:
+        sh: echo "${TAG:-latest}"
+    cmds:
+      - docker build -t {{.HUB_USERNAME}}/{{.REPO_NAME}}:{{.TAG}} .
+
+  docker:run:
+    desc: Run Docker container
+    vars:
+      TAG:
+        sh: echo "${TAG:-latest}"
+    cmds:
+      - docker run --rm {{.HUB_USERNAME}}/{{.REPO_NAME}}:{{.TAG}} --http=:8080 --log-level=info
+
+  tools:
+    desc: Install development tools
+    cmds:
+      - go install github.com/gotestyourself/gotestsum@latest
+      - go install github.com/moricho/gofumpt@latest
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

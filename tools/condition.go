@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/shilucloud/crossplane-agent/internal/logging"
+	"github.com/shilucloud/crossplane-mcp-server/internal/logging"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"

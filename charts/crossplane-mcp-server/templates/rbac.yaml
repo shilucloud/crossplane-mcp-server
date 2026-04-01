@@ -1,0 +1,56 @@
+{{- if .Values.rbac.create -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "crossplane-agent.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "crossplane-agent.labels" . | nindent 4 }}
+  {{- with .Values.rbac.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "crossplane-agent.fullname" . }}
+  labels:
+    {{- include "crossplane-agent.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - apiextensions.crossplane.io
+      - pkg.crossplane.io
+      - ops.crossplane.io
+      - protection.crossplane.io
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events", "secrets", "pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "crossplane-agent.fullname" . }}
+  labels:
+    {{- include "crossplane-agent.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "crossplane-agent.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "crossplane-agent.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

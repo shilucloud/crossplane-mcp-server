@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/shilucloud/crossplane-agent/internal/logging"
+	"github.com/shilucloud/crossplane-mcp-server/internal/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

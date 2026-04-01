@@ -1,0 +1,15 @@
+apiVersion: v2
+name: crossplane-mcp-server
+description: MCP server for Crossplane management
+type: application
+version: 0.1.0
+appVersion: "0.0.4"
+keywords:
+  - crossplane
+  - mcp
+  - kubernetes
+maintainers:
+  - name: shilash
+    email: shilu4577@gmail.com
+annotations:
+  artifacthub.io/containsSecurityUpdates: "false"

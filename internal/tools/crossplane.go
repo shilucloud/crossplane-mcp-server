@@ -3,7 +3,7 @@ package tools
 import (
 	"context"
 
-	crossplane "github.com/shilucloud/crossplane-agent/tools"
+	crossplane "github.com/shilucloud/crossplane-mcp-server/tools"
 )
 
 func init() {

@@ -11,8 +11,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/shilucloud/crossplane-agent/internal/logging"
-	"github.com/shilucloud/crossplane-agent/internal/tools"
+	"github.com/shilucloud/crossplane-mcp-server/internal/logging"
+	"github.com/shilucloud/crossplane-mcp-server/internal/tools"
 )
 
 var (

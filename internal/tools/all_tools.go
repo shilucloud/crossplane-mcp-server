@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/shilucloud/crossplane-agent/internal/logging"
-	"github.com/shilucloud/crossplane-agent/internal/metrics"
+	"github.com/shilucloud/crossplane-mcp-server/internal/logging"
+	"github.com/shilucloud/crossplane-mcp-server/internal/metrics"
 )
 
 func AddToolsToServer(server *mcp.Server) {

@@ -1,0 +1,48 @@
+replicaCount: 1
+
+image:
+  # Default: Docker Hub
+  # GHCR: ghcr.io/<owner>/crossplane-agent
+  repository: shilcloud/crossplane-mcp-server
+  tag: "0.0.4"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+serviceAccount:
+  create: true
+  name: crossplane-agent
+  annotations: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+probes:
+  enabled: true
+  liveness:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+  readiness:
+    path: /ready
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 3
+
+rbac:
+  create: true
+  annotations: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

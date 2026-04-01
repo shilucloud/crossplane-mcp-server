@@ -1,4 +1,4 @@
-module github.com/shilucloud/crossplane-agent
+module github.com/shilucloud/crossplane-mcp-server
 
 go 1.25.0
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shilucloud/crossplane-agent/internal/logging"
+	"github.com/shilucloud/crossplane-mcp-server/internal/logging"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
