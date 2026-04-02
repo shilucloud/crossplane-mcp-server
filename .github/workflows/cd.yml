@@ -7,7 +7,7 @@ on:
 
 env:
   DOCKER_REGISTRY: docker.io
-  DOCKER_IMAGE: shilcloud/crossplane-mcp-server
+  DOCKER_IMAGE: shilucloud/crossplane-mcp-server
   GHCR_REGISTRY: ghcr.io
   GHCR_IMAGE: ${{ github.repository_owner }}/crossplane-mcp-server
 
