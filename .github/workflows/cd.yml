@@ -14,6 +14,7 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
       packages: write
@@ -31,14 +32,19 @@ jobs:
         id: get_tag
         run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      # FIXED: No quoting issues
+      - name: Set clean version
+        id: version
+        run: |
+          TAG=${{ steps.get_tag.outputs.TAG }}
+          VERSION=${TAG#v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Update image tag in values.yaml
         uses: mikefarah/yq@v4.52.5
         env:
-          IMAGE_TAG: ${{ steps.get_tag.outputs.TAG }}
+          IMAGE_TAG: ${{ steps.version.outputs.VERSION }}
         with:
           cmd: |
-            export IMAGE_TAG="${IMAGE_TAG#v}"
             yq -i '.image.tag = strenv(IMAGE_TAG)' charts/crossplane-mcp-server/values.yaml
 
       - name: Set up QEMU
@@ -88,7 +94,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build binary
+      - name: Build binaries
         run: |
           mkdir -p dist
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o dist/crossplane-mcp-server-linux-amd64 ./cmd/server
@@ -105,22 +111,47 @@ jobs:
 
       - name: Package Helm chart
         run: |
-          helm package charts/crossplane-mcp-server \
-            --version ${{ steps.get_tag.outputs.TAG }} \
-            --app-version ${{ steps.get_tag.outputs.TAG }}
-          mv crossplane-mcp-server-${{ steps.get_tag.outputs.TAG }}.tgz dist/
+          VERSION=${{ steps.version.outputs.VERSION }}
 
-      # FIXED: Correct OCI push
-      - name: Push Helm chart to GHCR
+          helm package charts/crossplane-mcp-server \
+            --version $VERSION \
+            --app-version $VERSION
+
+          mv crossplane-mcp-server-$VERSION.tgz dist/
+
+      - name: Push Helm chart to GHCR (OCI)
         run: |
-          HELM_CHART_VERSION=${{ steps.get_tag.outputs.TAG }}
+          VERSION=${{ steps.version.outputs.VERSION }}
 
           helm registry login ${{ env.GHCR_REGISTRY }} \
             -u ${{ github.actor }} \
             -p ${{ secrets.GITHUB_TOKEN }}
 
-          helm push dist/crossplane-mcp-server-${HELM_CHART_VERSION}.tgz \
-            oci://${{ env.GHCR_REGISTRY }}/${{ github.repository_owner }}
+          helm push dist/crossplane-mcp-server-$VERSION.tgz \
+            oci://${{ env.GHCR_REGISTRY }}/${{ github.repository_owner }}/helm
+
+      - name: Prepare Helm repo (docs)
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          mkdir -p docs
+          cp dist/crossplane-mcp-server-$VERSION.tgz docs/
+
+      - name: Generate Helm repo index
+        run: |
+          helm repo index docs \
+            --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
+            --merge docs/index.yaml || \
+          helm repo index docs \
+            --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+
+      - name: Commit Helm repo (GitHub Pages)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add docs/
+          git commit -m "Update Helm repo for ${{ steps.version.outputs.VERSION }}" || echo "No changes"
+          git push
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -132,7 +163,7 @@ jobs:
             dist/crossplane-mcp-server-linux-amd64.sha256
             dist/crossplane-mcp-server-linux-arm64
             dist/crossplane-mcp-server-linux-arm64.sha256
-            dist/crossplane-mcp-server-${{ steps.get_tag.outputs.TAG }}.tgz
+            dist/crossplane-mcp-server-${{ steps.version.outputs.VERSION }}.tgz
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
