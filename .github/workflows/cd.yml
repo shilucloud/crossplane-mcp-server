@@ -22,11 +22,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.22'
 
       - name: Get tag
         id: get_tag
@@ -130,28 +132,28 @@ jobs:
           helm push dist/crossplane-mcp-server-$VERSION.tgz \
             oci://${{ env.GHCR_REGISTRY }}/${{ github.repository_owner }}/helm
 
-      - name: Prepare Helm repo (docs)
+      - name: Commit Helm repo (GitHub Pages)
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git fetch origin main
+          git checkout main
+
           mkdir -p docs
           cp dist/crossplane-mcp-server-$VERSION.tgz docs/
 
-      - name: Generate Helm repo index
-        run: |
           helm repo index docs \
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }} \
             --merge docs/index.yaml || \
           helm repo index docs \
             --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
 
-      - name: Commit Helm repo (GitHub Pages)
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
           git add docs/
-          git commit -m "Update Helm repo for ${{ steps.version.outputs.VERSION }}" || echo "No changes"
-          git push
+          git commit -m "Update Helm repo for $VERSION" || echo "No changes to commit"
+          git push origin main
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
