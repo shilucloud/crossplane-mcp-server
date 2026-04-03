@@ -204,6 +204,31 @@ func init() {
 		},
 	)
 
+	// debug_xr
+	type debugXRParams struct {
+		Group     string `json:"group"     jsonschema:"XR API group e.g. platform.example.com"`
+		Version   string `json:"version"   jsonschema:"XR version e.g. v1alpha1"`
+		Resource  string `json:"resource"  jsonschema:"XR plural resource name e.g. xnetworks"`
+		Name      string `json:"name"      jsonschema:"Name of the XR"`
+		Namespace string `json:"namespace" jsonschema:"Namespace (empty for cluster-scoped)"`
+	}
+
+	registerTool("debug_xr",
+		"Deep debug a Crossplane XR (Composite Resource). Builds the full XR tree (XR → Composition → Managed Resources → Providers), collects events, and returns a structured diagnosis with root cause, severity, and suggested fixes. Detects issues like missing compositions, function failures, provider errors, credential issues, and MR sync failures.",
+		func(ctx context.Context, p debugXRParams) (any, error) {
+			return crossplane.DebugXR(
+				ctx,
+				DynamicClient,
+				Clientset,
+				p.Group,
+				p.Version,
+				p.Resource,
+				p.Name,
+				p.Namespace,
+			)
+		},
+	)
+
 	// describe_xrd
 	registerTool("describe_xrd",
 		"Describe a CompositeResourceDefinition (XRD). Returns kind, group, version, scope, established status, and all spec.parameters fields with types, enums, defaults, and descriptions.",
