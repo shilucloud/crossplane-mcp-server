@@ -4,8 +4,27 @@ entries:
   - annotations:
       artifacthub.io/containsSecurityUpdates: "false"
     apiVersion: v2
+    appVersion: 0.1.3
+    created: "2026-04-03T12:21:36.468251669Z"
+    description: MCP server for Crossplane management
+    digest: 5211097b2c0dc265966aa3bf8fda819108234ebe4f73a60bbb4eb78cc8ef8eed
+    keywords:
+    - crossplane
+    - mcp
+    - kubernetes
+    maintainers:
+    - email: shilu4577@gmail.com
+      name: shilash
+    name: crossplane-mcp-server
+    type: application
+    urls:
+    - https://shilucloud.github.io/crossplane-mcp-server/crossplane-mcp-server-0.1.3.tgz
+    version: 0.1.3
+  - annotations:
+      artifacthub.io/containsSecurityUpdates: "false"
+    apiVersion: v2
     appVersion: 0.1.2
-    created: "2026-04-03T07:31:59.838910998Z"
+    created: "2026-04-03T12:21:36.467982086Z"
     description: MCP server for Crossplane management
     digest: 365d0bbbaa41480dceef0aab9517b8093cafca30c6a6ded5de58a20bed551e21
     keywords:
@@ -24,7 +43,7 @@ entries:
       artifacthub.io/containsSecurityUpdates: "false"
     apiVersion: v2
     appVersion: 0.1.1
-    created: "2026-04-03T07:31:59.838441861Z"
+    created: "2026-04-03T12:21:36.467685773Z"
     description: MCP server for Crossplane management
     digest: 227d6d9d176d16e57f751078eadf6c0d7650e0edb286815a99e2d535e73fa83b
     keywords:
@@ -39,4 +58,4 @@ entries:
     urls:
     - https://shilucloud.github.io/crossplane-mcp-server/crossplane-mcp-server-0.1.1.tgz
     version: 0.1.1
-generated: "2026-04-03T07:31:59.838014451Z"
+generated: "2026-04-03T12:21:36.467137228Z"
