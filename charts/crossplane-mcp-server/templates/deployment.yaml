@@ -16,19 +16,25 @@ spec:
         {{- include "crossplane-agent.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "crossplane-agent.serviceAccountName" . }}
+
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
+
           args:
             - "--http"
             - "0.0.0.0:8080"
+
+          # ✅ FIXED HERE
           resources:
-            {{- toYaml .Values.resources | nindent 10 }}
+{{- toYaml .Values.resources | nindent 12 }}
+
           {{- if .Values.probes.enabled }}
           livenessProbe:
             httpGet:
@@ -37,6 +43,7 @@ spec:
             initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
             failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+
           readinessProbe:
             httpGet:
               path: {{ .Values.probes.readiness.path }}
@@ -45,14 +52,17 @@ spec:
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
             failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
           {{- end }}
+
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

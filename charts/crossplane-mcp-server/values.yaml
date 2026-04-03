@@ -4,7 +4,7 @@ image:
   # Default: Docker Hub
   # GHCR: ghcr.io/<owner>/crossplane-agent
   repository: shilucloud/crossplane-mcp-server
-  tag: "0.0.4"
+  tag: "0.1.1"
   pullPolicy: IfNotPresent
 
 service:
